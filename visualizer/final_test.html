@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>VISUALIZADOR 3D - VERSION FINAL</title>
+    <style>
+        body {
+            background: #050505;
+            color: #00ff00;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #setup-ui {
+            text-align: center;
+            background: rgba(0, 20, 0, 0.8);
+            padding: 40px;
+            border: 2px solid #00ff00;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            z-index: 100;
+        }
+
+        button {
+            background: #eeff00;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #ccff00;
+            transform: scale(1.05);
+        }
+
+        #diag {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 350px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-size: 11px;
+            color: #0f0;
+            overflow: auto;
+            pointer-events: none;
+            text-align: left;
+        }
+
+        .error {
+            color: #ff3333;
+            font-weight: bold;
+        }
+
+        /* ESTILOS PLAYLIST FASE 2 */
+        #playlist-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0, 10, 0, 0.9);
+            border-left: 1px solid #0f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 500;
+            transition: transform 0.3s;
+        }
+
+        #playlist-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f0;
+            text-align: center;
+        }
+
+        #track-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #track-list li {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #track-list li:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        #track-list li.active {
+            background: rgba(0, 255, 0, 0.3);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #controls {
+            padding: 20px;
+            background: rgba(0, 20, 0, 1);
+            border-top: 1px solid #0f0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            min-width: 40px;
+            border-radius: 4px;
+        }
+
+        .ctrl-btn:hover {
+            background: #222;
+            color: #0f0;
+            border-color: #0f0;
+        }
+
+        .mode-btn.active {
+            color: #0f0;
+            border-color: #0f0;
+            box-shadow: inset 0 0 5px #0f0;
+        }
+
+        /* --- CONFIG PANEL --- */
+        #config-panel {
+            padding: 15px;
+            background: #080808;
+            border-top: 1px solid #0f0;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .config-group {
+            margin-bottom: 15px;
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type=range] {
+            flex: 1;
+            height: 4px;
+            background: #222;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #0f0;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .val-display {
+            font-size: 11px;
+            color: #0f0;
+            min-width: 30px;
+            text-align: right;
+            font-family: monospace;
+        }
+
+        #folder-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 15px;
+            width: auto;
+            margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: normal;
+            cursor: pointer;
+            border-radius: 20px;
+            /* Más orgánico */
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        #folder-btn:hover {
+            background: rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .rec-btn {
+            background: #ff4444;
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+
+        .rec-btn.recording {
+            background: white;
+            color: red;
+            border: 2px solid red;
+            animation: none;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .rec-btn {
+            background: #ff4444;
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+
+        .rec-btn.recording {
+            background: white;
+            color: red;
+            border: 2px solid red;
+            animation: none;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .char-input {
+            width: 100%;
+            padding: 8px;
+            background: #222;
+            color: #0f0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="setup-ui">
+        <h1 style="margin-top:0">Visualizador 3D - Fase 1</h1>
+        <p>Para encender la cámara, pulsa el botón amarillo:</p>
+        <button id="btn">ENCENDER CÁMARA</button>
+    </div>
+
+    <div id="diag">
+        <div>[INFO] Esperando inicio...</div>
+    </div>
+
+    <!-- PANEL DE PLAYLIST -->
+    <div id="playlist-panel">
+        <div id="playlist-header">
+            <h3>MUSIC PLAYLIST</h3>
+            <button id="folder-btn">SELECCIONAR CARPETA</button>
+            <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
+        </div>
+        <ul id="track-list">
+            <li style="color: #666; text-align: center; padding: 20px;">Sin canciones cargadas</li>
+        </ul>
+        <div id="controls">
+            <button class="ctrl-btn" id="prevBtn" title="Anterior">⏮</button>
+            <button class="ctrl-btn" id="playPauseBtn" title="Play/Pause">►</button>
+            <button class="ctrl-btn" id="stopBtn" title="Stop">■</button>
+            <button class="ctrl-btn" id="nextBtn" title="Siguiente">⏭</button>
+            <button class="ctrl-btn mode-btn" id="repeatBtn" title="Repetir">🔄</button>
+            <button class="ctrl-btn mode-btn" id="shuffleBtn" title="Aleatorio">🔀</button>
+        </div>
+
+        <!-- ESTUDIO DE GRABACIÓN -->
+        <div id="recording-studio"
+            style="border-top: 1px solid #0f0; background: #002200; padding: 15px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleStudio()">
+                <span>🔴 ESTUDIO DE GRABACIÓN</span>
+                <span id="studio-caret">▼</span>
+            </h4>
+            <div id="studio-controls" style="display: none;">
+
+                <!-- Configuración -->
+                <div class="config-group">
+                    <label>Resolución de Video</label>
+                    <select id="rec-resolution"
+                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
+                        <option value="original">Original (Ventana)</option>
+                        <option value="tiktok">TikTok / Shorts (9:16)</option>
+                        <option value="landscape">HD Horizontal (16:9)</option>
+                        <option value="square">Instagram (1:1)</option>
+                    </select>
+                </div>
+
+                <div class="config-group">
+                    <label>Audio</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="rec-audio" checked style="margin-right: 10px;">
+                        <span style="font-size: 11px; color: #aaa;">Incluir Audio del Sistema</span>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+
+                    <button class="ctrl-btn" id="btn-rec-track" style="border-color: #ffaa00; color: #ffaa00;">
+                        🎤 GRABAR CANCIÓN ACTUAL
+                    </button>
+
+                    <button class="ctrl-btn" id="btn-rec-playlist" style="border-color: #ff55ff; color: #ff55ff;">
+                        📀 GRABAR PLAYLIST COMPLETA
+                    </button>
+
+                    <button class="ctrl-btn rec-btn" id="recordBtnManual">
+                        🔴 REC MANUAL (Start/Stop)
+                    </button>
+
+                </div>
+                <div id="rec-status"
+                    style="font-size: 10px; color: #ff4444; margin-top: 10px; text-align: center; display:none;">
+                    GRABANDO PROGRESIVA...
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE CONFIGURACIÓN ORIGINAL -->
+        <div id="config-panel">
+            <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 12px; border-bottom: 1px solid #222; padding-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleConfig()">
+                <span>⚙ CONFIGURACIÓN</span>
+                <span id="config-caret">▲</span>
+            </h4>
+            <div id="config-content" style="display: block;">
+
+                <div class="config-group">
+                    <label>Profundidad Base Z</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-baseDepth" min="1" max="50" value="9">
+                        <span class="val-display" id="val-baseDepth">9</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Reactividad Audio (Z)</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-audioDepth" min="0" max="50" value="9">
+                        <span class="val-display" id="val-audioDepth">9</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Tamaño de Puntos</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-pointSize" min="0.1" max="2.0" step="0.05" value="0.45">
+                        <span class="val-display" id="val-pointSize">0.45</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Intensidad de Ondas</label>
+                    <div class="config-row">
+                        <label style="font-size: 12px; margin-right: 10px;"><input type="radio" name="effectMode"
+                                value="wave" checked> Olas Clásicas</label>
+                        <label style="font-size: 12px;"><input type="radio" name="effectMode" value="ripple"> Lluvia /
+                            Ripples</label>
+                    </div>
+
+                    <div class="config-row" id="panel-wave">
+                        <label style="font-size: 11px;">Intensidad Olas</label>
+                        <input type="range" id="cfg-waveInt" min="0" max="10" step="0.1" value="1.5">
+                        <span class="val-display" id="val-waveInt">1.5</span>
+                    </div>
+
+                    <div class="config-row" id="panel-ripple" style="display:none;">
+                        <label style="font-size: 11px;">Intensidad Lluvia</label>
+                        <input type="range" id="cfg-rippleInt" min="0" max="10" step="0.5" value="3.0">
+                        <span class="val-display" id="val-rippleInt">3.0</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Brillo / Ganancia</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-gain" min="0.5" max="5.0" step="0.1" value="1.5">
+                        <span class="val-display" id="val-gain">1.5</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Exageración Z (Volumen 3D)</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-exaggeration" min="1.0" max="10.0" step="0.5" value="2.0">
+                        <span class="val-display" id="val-exaggeration">2.0</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Geometría de Proyección</label>
+                    <div class="config-row">
+                        <select id="cfg-viewMode"
+                            style="width: 100%; background: #222; color: #0f0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                            <option value="plane">1. Plano Original</option>
+                            <option value="cylinder">2. Cilindro / Túnel</option>
+                            <option value="sphere">3. Esfera / Planeta</option>
+                            <option value="spiral">4. Espiral / ADN</option>
+                            <option value="vortex">5. Vórtice / Agujero Negro</option>
+                            <option value="torus">6. Toroide / Donut</option>
+                            <option value="book">7. Libro / Esquina</option>
+                            <option value="scatter">8. Explosión / Big Bang</option>
+                            <option value="hourglass">9. Reloj de Arena</option>
+                            <option value="kaleido">10. Caleidoscopio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Cambio de Color Auto</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-autoMood" checked style="margin-right: 10px;">
+                        <span style="font-size: 10px; color: #666;">Mood Swinger activado</span>
+                    </div>
+                </div>
+
+                <!-- CONTROLES FASE 4: TRAIL -->
+                <div class="config-group" style="display:none;">
+                    <label>Efecto Estela (Trail)</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-trailData" style="margin-right: 10px;">
+                        <span style="font-size: 10px; color: #666;">Activar Estelas Fantasma</span>
+                    </div>
+                </div>
+
+
+
+
+                <div class="config-group">
+                    <label>Auto Rotación</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-autoRotate" checked style="margin-right: 10px;">
+                        <input type="range" id="cfg-rotateSpeed" min="0" max="10" step="0.5" value="2.0">
+                        <span class="val-display" id="val-rotateSpeed">2.0</span>
+                    </div>
+                </div>
+
+
+                <button class="ctrl-btn" id="randomHueBtn" style="width: 100%; margin-top: 10px;">CAMBIAR COLOR
+                    AHORA</button>
+                <button class="ctrl-btn" id="resetDefaultsBtn"
+                    style="width: 100%; margin-top: 10px; border-color: #f44; color: #f44;">RESTAURAR VALORES</button>
+            </div> <!-- End config-content -->
+        </div>
+    </div>
+
+    <button id="resetBtn"
+        style="display:none; position:fixed; top:20px; right:320px; z-index:100; padding:10px 20px; font-size:14px; background:rgba(0,30,0,0.8); color:#0f0; border:1px solid #0f0; cursor:pointer; border-radius:5px; font-family:monospace; font-weight:bold;">REINICIAR
+        VISTA</button>
+
+    <script src="three.min.js"></script>
+    <!-- Añadimos OrbitControls para que puedas girar tú mismo con el ratón -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        const diagDiv = document.getElementById('diag');
+        function log(msg, isError = false) {
+            console.log(msg); // También a consola
+            const d = document.createElement('div');
+            if (isError) d.className = 'error';
+            d.textContent = `> ${msg}`;
+            diagDiv.appendChild(d);
+            diagDiv.scrollTop = diagDiv.scrollHeight;
+        }
+        log("DEBUG: Script Start - Line 443");
+
+        // --- SISTEMA DE AUDIO Y PLAYLIST ---
+        let audioContext, analyser, dataArray, source;
+        const audio = new Audio();
+        let playlist = [];
+        let currentIndex = -1;
+        let repeatMode = 0; // 0: None, 1: One, 2: All
+        let shuffleActive = false;
+        let originalOrder = [];
+
+        // --- MOTOR DE CICLOS DE COLOR (MOOD SWINGER) ---
+        let currentBaseHue = 120; // Empezamos en Matrix Green
+        let targetBaseHue = 120;
+        let lastHueSwitchTime = Date.now();
+        let rotVect = { x: 0.2, y: 0.8, z: 0.1 }; // Rotación inicial multi-eje
+        let lastBassHitTime = 0;
+        let activeRipples = [];
+        let smoothedBass = 0;
+
+        // --- GLOBALES (Para renderizado y grabación) ---
+        let renderer, scene, camera, pointsGroup;
+
+        // --- SISTEMA DE CONFIGURACIÓN DINÁMICO ---
+        const defaultConfig = {
+            baseDepth: 9,
+            audioDepth: 9,
+            pointSize: 0.45,
+            waveInt: 1.5,
+            gain: 1.5,
+            autoMood: true,
+            autoRotate: true,
+            rotateSpeed: 2.0,
+            rippleInt: 3.0,
+            effectMode: 'wave', // 'wave' o 'ripple'
+            viewMode: 'plane', // 'plane', 'cylinder'
+            exaggeration: 2.0,
+            trailData: false, // Estela visual
+            viewMode: 'plane' // 'plane', 'cylinder'
+        };
+
+        let config = { ...defaultConfig };
+
+        function loadConfig() {
+            const saved = localStorage.getItem('visualizerConfig');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    config = { ...defaultConfig, ...parsed };
+                } catch (e) { console.error("Error loading config", e); }
+            }
+        }
+        loadConfig();
+
+        function saveConfig() {
+            localStorage.setItem('visualizerConfig', JSON.stringify(config));
+        }
+
+        function updateUIFromConfig() {
+            const setVal = (id, val, isCheck = false) => {
+                const el = document.getElementById('cfg-' + id);
+                const disp = document.getElementById('val-' + id);
+                if (!el) return;
+                if (isCheck) el.checked = val;
+                else el.value = val;
+                if (disp) disp.textContent = val;
+            };
+
+            setVal('baseDepth', config.baseDepth);
+            setVal('audioDepth', config.audioDepth);
+            setVal('pointSize', config.pointSize);
+            setVal('waveInt', config.waveInt);
+            setVal('gain', config.gain);
+            setVal('autoMood', config.autoMood, true);
+            setVal('autoRotate', config.autoRotate, true);
+            setVal('rotateSpeed', config.rotateSpeed);
+            setVal('rippleInt', config.rippleInt);
+            setVal('exaggeration', config.exaggeration);
+            setVal('trailData', config.trailData, true);
+
+
+            // UI Mode Update
+            const radios = document.getElementsByName('effectMode');
+            for (let r of radios) {
+                if (r.value === config.effectMode) r.checked = true;
+            }
+            toggleEffectPanel(config.effectMode);
+
+            const viewSel = document.getElementById('cfg-viewMode');
+            if (viewSel) viewSel.value = config.viewMode;
+        }
+
+        function toggleEffectPanel(mode) {
+            document.getElementById('panel-wave').style.display = (mode === 'wave') ? 'flex' : 'none';
+            document.getElementById('panel-ripple').style.display = (mode === 'ripple') ? 'flex' : 'none';
+        }
+
+
+        function initConfigListeners() {
+            log("DEBUG: initConfigListeners() started");
+            try {
+                const bind = (id, prop, isCheck = false) => {
+                    const el = document.getElementById('cfg-' + id);
+                    const disp = document.getElementById('val-' + id);
+                    if (!el) return;
+                    el.oninput = () => {
+                        config[prop] = isCheck ? el.checked : parseFloat(el.value);
+                        if (disp) disp.textContent = el.value;
+                        saveConfig();
+                    };
+                };
+                bind('baseDepth', 'baseDepth');
+                bind('audioDepth', 'audioDepth');
+                bind('pointSize', 'pointSize');
+                bind('waveInt', 'waveInt');
+                bind('gain', 'gain');
+                bind('rotateSpeed', 'rotateSpeed');
+                bind('rippleInt', 'rippleInt');
+                bind('rippleInt', 'rippleInt');
+                bind('exaggeration', 'exaggeration');
+                bind('trailData', 'trailData', true);
+
+
+                log("Listeners de configuración inicializados correctamente.");
+
+                const viewSel = document.getElementById('cfg-viewMode');
+                if (viewSel) {
+                    viewSel.onchange = (e) => {
+                        config.viewMode = e.target.value;
+                        saveConfig();
+                        log("Vista cambiada a: " + config.viewMode);
+                    };
+                }
+
+                const radios = document.getElementsByName('effectMode');
+                for (let r of radios) {
+                    r.onchange = (e) => {
+                        if (e.target.checked) {
+                            config.effectMode = e.target.value;
+                            toggleEffectPanel(config.effectMode);
+                            saveConfig();
+                        }
+                    };
+                }
+
+                const autoMoodEl = document.getElementById('cfg-autoMood');
+                if (autoMoodEl) {
+                    autoMoodEl.onchange = (e) => {
+                        config.autoMood = e.target.checked;
+                        saveConfig();
+                    };
+                }
+
+                const autoRotateEl = document.getElementById('cfg-autoRotate');
+                if (autoRotateEl) {
+                    autoRotateEl.onchange = (e) => {
+                        config.autoRotate = e.target.checked;
+                        saveConfig();
+                    };
+                }
+
+                document.getElementById('randomHueBtn').onclick = () => {
+                    targetBaseHue = Math.random() * 360;
+                    lastHueSwitchTime = Date.now();
+                    log("Color cambiado manualmente.");
+                };
+
+                document.getElementById('resetDefaultsBtn').onclick = () => {
+                    if (confirm("¿Restaurar todos los valores a los originales?")) {
+                        config = { ...defaultConfig };
+                        saveConfig();
+                        updateUIFromConfig();
+                        log("Valores restaurados por defecto.");
+                    }
+                };
+            } catch (e) {
+                log("ERROR in initConfigListeners: " + e.message, true);
+            }
+        }
+        initConfigListeners();
+        updateUIFromConfig();
+
+        // --- LÓGICA DE GRABACIÓN DE VIDEO ---
+
+        // --- LÓGICA DE GRABACIÓN DE VIDEO ---
+        // --- ESTUDIO DE GRABACIÓN & LÓGICA ---
+        function toggleStudio() {
+            const el = document.getElementById('studio-controls');
+            const caret = document.getElementById('studio-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
+        function toggleConfig() {
+            const el = document.getElementById('config-content');
+            const caret = document.getElementById('config-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
+        const recBtnManual = document.getElementById('recordBtnManual');
+        const btnRecTrack = document.getElementById('btn-rec-track');
+        const btnRecPlaylist = document.getElementById('btn-rec-playlist');
+        const recStatus = document.getElementById('rec-status');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+        let recordingMode = 'manual'; // 'manual', 'track', 'playlist'
+        let audioDestination = null;
+
+        // Elementos UI de Grabación
+        recBtnManual.onclick = () => {
+            if (isRecording) stopRecording();
+            else startRecording('manual');
+        };
+
+        btnRecTrack.onclick = () => startRecording('track');
+        btnRecPlaylist.onclick = () => startRecording('playlist');
+
+
+        function getResolutionSize(mode) {
+            const h = window.innerHeight; // Usamos altura como base para calidad
+            switch (mode) {
+                case 'tiktok': return { w: 540, h: 960 }; // 9:16 (Calidad media para performance)
+                case 'landscape': return { w: 1280, h: 720 }; // 16:9
+                case 'square': return { w: 720, h: 720 }; // 1:1
+                default: return { w: window.innerWidth, h: window.innerHeight };
+            }
+        }
+
+        function startRecording(mode) {
+            if (isRecording) return;
+            recordingMode = mode;
+            log(`🎬 Iniciando Grabación: Modo ${mode.toUpperCase()}`);
+
+            try {
+                // 1. Configurar Audio (Si está activado)
+                const includeAudio = document.getElementById('rec-audio').checked;
+                let audioStream = null;
+
+                if (includeAudio && audioContext) {
+                    if (!audioDestination) {
+                        audioDestination = audioContext.createMediaStreamDestination();
+                        // Conectamos el source existente al destino de grabación
+                        // NOTA: 'source' debe existir (definido en initAudioContext o playTrack)
+                        if (source) source.connect(audioDestination);
+                    }
+                    audioStream = audioDestination.stream;
+                    log("🔊 Audio capturado para grabación.");
+                }
+
+                // 2. Configurar Resolución
+                const resMode = document.getElementById('rec-resolution').value;
+                const size = getResolutionSize(resMode);
+
+                // Redimensionar Renderer temporalmente
+                renderer.setSize(size.w, size.h);
+                camera.aspect = size.w / size.h;
+                camera.updateProjectionMatrix();
+
+
+                // 3. Preparar Stream Combinado
+                const canvasStream = renderer.domElement.captureStream(30);
+                const finalStream = new MediaStream();
+
+                // Agregar video
+                canvasStream.getVideoTracks().forEach(t => finalStream.addTrack(t));
+
+                // Agregar audio si existe
+                if (audioStream) {
+                    audioStream.getAudioTracks().forEach(t => finalStream.addTrack(t));
+                }
+
+                const options = { mimeType: 'video/webm; codecs=vp9' };
+                mediaRecorder = new MediaRecorder(finalStream, options);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    saveRecording();
+                    // Restaurar tamaño original
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // Actualizar UI
+                recStatus.style.display = 'block';
+                recStatus.textContent = `GRABANDO (${mode})...`;
+                recBtnManual.textContent = "⏹ DETENER";
+                recBtnManual.classList.add('recording');
+
+                // Lógica Específica por Modo
+                if (mode === 'track' || mode === 'playlist') {
+                    // Reiniciar canción actual
+                    audio.currentTime = 0;
+                    if (audio.paused) audio.play();
+                }
+
+            } catch (e) {
+                console.error(e);
+                log("❌ Error al iniciar grabación: " + e.message, true);
+            }
+        }
+
+        function stopRecording() {
+            if (!mediaRecorder || !isRecording) return;
+            mediaRecorder.stop();
+            isRecording = false;
+
+            // UI Reset
+            recStatus.style.display = 'none';
+            recBtnManual.textContent = "🔴 REC MANUAL (Start/Stop)";
+            recBtnManual.classList.remove('recording');
+
+            log("⏹ Grabación detenida. Procesando...");
+        }
+
+        function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `V3D_${recordingMode}_${Date.now()}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                recordedChunks = [];
+            }, 100);
+            log("✅ Video guardado.");
+        }
+
+        // --- CONTROLES DE REPRODUCCIÓN (Restaurados) ---
+        document.getElementById('prevBtn').onclick = () => {
+            let idx = currentIndex - 1;
+            if (idx < 0) idx = playlist.length - 1;
+            playTrack(idx);
+        };
+        document.getElementById('nextBtn').onclick = () => {
+            let idx = currentIndex + 1;
+            if (idx >= playlist.length) idx = 0;
+            playTrack(idx);
+        };
+
+
+
+        // --- MANEJO DE FIN DE CANCION (AUTO STOP / NEXT) ---
+        audio.onended = () => {
+            if (isRecording) {
+                if (recordingMode === 'track') {
+                    log("🎵 Canción terminada. Deteniendo grabación...");
+                    stopRecording();
+                } else if (recordingMode === 'playlist') {
+                    // Modo Playlist: Siguiente canción
+                    log("🎵 Canción terminada. Pasando a la siguiente...");
+
+                    // Lógica de Siguiente (Copiada/Adaptada de nextBtn)
+                    let nextIndex;
+                    if (shuffleActive) {
+                        nextIndex = Math.floor(Math.random() * playlist.length);
+                    } else {
+                        nextIndex = currentIndex + 1;
+                    }
+
+                    if (nextIndex >= playlist.length) {
+                        // Fin de playlist (si no es shuffle o repeat)
+                        if (repeatMode === 2 || shuffleActive) {
+                            // Si es repeat all o shuffle, sigue (pero cuidado con bucles infinitos en grabación)
+                            // Para grabación segura, mejor detener si llega al final lineal.
+                            // Pero el usuario pidió "Playlist". Si es lista finita, paramos.
+                            if (!shuffleActive && repeatMode !== 2) {
+                                log("🏁 Fin de Playlist. Deteniendo grabación.");
+                                stopRecording();
+                                return;
+                            }
+                            if (nextIndex >= playlist.length) nextIndex = 0; // Loop simple
+                        } else {
+                            log("🏁 Fin de Playlist. Deteniendo grabación.");
+                            stopRecording();
+                            return;
+                        }
+                    }
+
+                    playTrack(nextIndex);
+                    // IMPORTANTE: Asegurar que el source de audio nuevo se conecte al destino de grabación
+                    // initAudioContext reconecta el source. 
+
+                }
+            } else {
+                // Comportamiento normal (no grabación)
+                handleTrackEndNormal();
+            }
+        };
+
+        function handleTrackEndNormal() {
+            // Lógica normal de reproducción continua
+            let nextIndex = currentIndex + 1;
+            if (shuffleActive) {
+                nextIndex = Math.floor(Math.random() * playlist.length);
+            } else if (repeatMode === 2 && nextIndex >= playlist.length) {
+                nextIndex = 0;
+            }
+
+            if (nextIndex < playlist.length || repeatMode === 2 || shuffleActive) {
+                playTrack(nextIndex);
+            }
+        }
+
+
+        window.addEventListener('load', () => {
+            updateUIFromConfig();
+            log("Ready.");
+        });
+
+        const folderInput = document.getElementById('folder-input');
+        const trackListUI = document.getElementById('track-list');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+
+        document.getElementById('folder-btn').onclick = () => {
+            log("Click en Seleccionar Carpeta");
+            folderInput.click();
+        };
+
+        const defaultTrackFiles = [
+            "15 Rita BB!.mp3",
+            "22 15 Rita BB! (1).mp3",
+            "Chanfaina ON (PatSaint).mp3",
+            "Cumple Rita 15.mp3",
+            "Dont Touch Me_ La Tía Metiche (1).mp3",
+            "Dont Touch Me_ La Tía Metiche.mp3",
+            "Qué Palta_ Chanfaina de Jerga (Ya Pe xD).mp3"
+        ];
+
+        folderInput.onchange = (e) => {
+            const files = Array.from(e.target.files).filter(f =>
+                f.type.startsWith('audio/') ||
+                f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.ogg')
+            );
+
+            if (files.length === 0) {
+                log("No se encontraron archivos de audio en la carpeta.", true);
+                return;
+            }
+
+            playlist = files.map(f => ({
+                name: f.name,
+                url: URL.createObjectURL(f)
+            })).sort((a, b) => a.name.localeCompare(b.name));
+
+            renderPlaylist();
+            log(`Cargadas ${playlist.length} canciones.`);
+            playTrack(0);
+        };
+
+        function renderPlaylist() {
+            trackListUI.innerHTML = "";
+            playlist.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.textContent = track.name;
+                li.onclick = () => playTrack(index);
+                if (index === currentIndex) li.className = 'active';
+                trackListUI.appendChild(li);
+            });
+        }
+
+        function initDefaultPlaylist() {
+            log("DEBUG: initDefaultPlaylist() called");
+            try {
+                playlist = defaultTrackFiles.map(name => {
+                    const url = `./Music/${encodeURIComponent(name)}`;
+                    // log("DEBUG: Generated URL for " + name + ": " + url); // Uncomment for lots of spam
+                    return { name: name, url: url };
+                });
+                renderPlaylist();
+                log("DEBUG: Default playlist mapped. Count: " + playlist.length);
+            } catch (e) {
+                log("ERROR in initDefaultPlaylist: " + e.message, true);
+            }
+        }
+        initDefaultPlaylist();
+
+        function getNextIndex() {
+            if (shuffleActive && playlist.length > 0) return Math.floor(Math.random() * playlist.length);
+            let next = currentIndex + 1;
+            if (next >= playlist.length) next = 0;
+            return next;
+        }
+
+        function getPrevIndex() {
+            if (shuffleActive) return Math.floor(Math.random() * playlist.length); // Shuffle on prev behaves like random usually or history (simple random here)
+            let prev = currentIndex - 1;
+            if (prev < 0) prev = playlist.length - 1;
+            return prev;
+        }
+
+        function playTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            currentIndex = index;
+            const track = playlist[currentIndex];
+            audio.src = track.url;
+            audio.play();
+            playPauseBtn.textContent = "⏸";
+            renderPlaylist();
+            log(`Reproduciendo: ${track.name}`);
+            if (!audioContext) initAudioContext();
+        }
+
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            source = audioContext.createMediaElementSource(audio);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            // Si hay grabación activa y destino de audio, reconectamos para no perder audio en el video
+            if (isRecording && audioDestination) {
+                source.connect(audioDestination);
+            }
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+
+
+        playPauseBtn.onclick = () => {
+            if (playlist.length === 0) return;
+            // Asegurar que el contexto de audio esté activo
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (audio.paused) {
+                audio.play();
+                playPauseBtn.textContent = "⏸";
+            } else {
+                audio.pause();
+                playPauseBtn.textContent = "►";
+            }
+        };
+
+        document.getElementById('stopBtn').onclick = () => {
+            audio.pause();
+            audio.currentTime = 0;
+            playPauseBtn.textContent = "►";
+            log("Audio detenido.");
+        };
+
+        document.getElementById('nextBtn').onclick = () => {
+            if (playlist.length === 0) return;
+            playTrack(getNextIndex());
+        };
+
+        document.getElementById('prevBtn').onclick = () => {
+            if (playlist.length === 0) return;
+            playTrack(getPrevIndex());
+        };
+
+        const repeatBtn = document.getElementById('repeatBtn');
+        repeatBtn.onclick = () => {
+            repeatMode = (repeatMode + 1) % 3;
+            // 0: None (Off), 1: One (1), 2: All (All)
+            repeatBtn.classList.toggle('active', repeatMode > 0);
+            const icons = ["🔄", "🔂", "🔁"];
+            repeatBtn.textContent = icons[repeatMode];
+            const modes = ["Repetición Desactivada", "Repetir Una", "Repetir Todo"];
+            log(modes[repeatMode]);
+        };
+
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        shuffleBtn.onclick = () => {
+            shuffleActive = !shuffleActive;
+            shuffleBtn.classList.toggle('active', shuffleActive);
+            log(shuffleActive ? "Aleatorio Activado" : "Aleatorio Desactivado");
+        };
+
+        // --- MANEJO DE FIN DE CANCION (AUTO STOP / NEXT) ---
+        audio.onended = () => {
+            log(`DEBUG: audio.onended Fired. Recording: ${isRecording}, Mode: ${recordingMode}`);
+
+            if (isRecording) {
+                if (recordingMode === 'track') {
+                    // MODO TRACK: Parar al terminar la canción
+                    log("🎵 Canción terminada. Deteniendo grabación...");
+                    stopRecording();
+                } else if (recordingMode === 'playlist') {
+                    // MODO PLAYLIST: Siguiente canción
+                    log("🎵 Canción terminada. Verificando siguiente...");
+
+                    let nextIndex;
+                    if (shuffleActive) {
+                        nextIndex = Math.floor(Math.random() * playlist.length);
+                    } else {
+                        nextIndex = currentIndex + 1;
+                    }
+
+                    // Verificar Fin de Playlist
+                    if (nextIndex >= playlist.length) {
+                        // Si no hay repeat all ni shuffle, terminamos
+                        if (!shuffleActive && repeatMode !== 2) {
+                            log("🏁 Fin de Playlist. Deteniendo grabación.");
+                            stopRecording();
+                            return;
+                        }
+                        if (nextIndex >= playlist.length) nextIndex = 0; // Loop All
+                    }
+
+                    playTrack(nextIndex);
+                }
+            } else {
+                // COMPORTAMIENTO NORMAL
+                if (repeatMode === 1) {
+                    playTrack(currentIndex);
+                } else if (repeatMode === 2 || currentIndex < playlist.length - 1 || shuffleActive) {
+                    playTrack(getNextIndex());
+                    // Nota: getNextIndex() parece usar lógica interna, 
+                    // si no existe, usar lógica manual:
+                    // (shuffleActive ? random : currentIndex + 1)
+                } else {
+                    playPauseBtn.textContent = "►";
+                }
+            }
+        };
+
+        // --- MOTOR VISUAL 3D ---
+        async function startVisualizer() {
+            const starter = document.getElementById('btn').parentElement;
+            starter.style.display = 'none';
+            log("Iniciando motor...");
+
+            if (typeof THREE === 'undefined') {
+                log("ERROR: La librería 3D no está cargada.", true);
+                return;
+            }
+
+            try {
+                log("Solicitando permisos de cámara...");
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                log("Cámara permitida.");
+
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+                log("Captura de video activa.");
+
+                // RESOLUCIÓN ULTRA (640x480)
+                const width = 640, height = 480;
+
+                // Variables de Control de FPS (45 FPS Target)
+                const fpsInterval = 1000 / 45;
+                let then = Date.now();
+                let elapsed;
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.set(0, 0, 450);
+
+                renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.autoClear = false;
+                document.body.appendChild(renderer.domElement);
+
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+
+                const geo = new THREE.BufferGeometry();
+                const positions = new Float32Array(width * height * 3);
+                const colors = new Float32Array(width * height * 3);
+
+                for (let i = 0; i < width * height; i++) {
+                    positions[i * 3] = ((i % width) - width / 2) * 0.25;
+                    positions[i * 3 + 1] = (-(Math.floor(i / width)) + height / 2) * 0.25;
+                    positions[i * 3 + 2] = 0;
+                    colors[i * 3 + 1] = 1;
+                }
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.45,
+                    vertexColors: true,
+                    transparent: false
+                });
+                const points = new THREE.Points(geo, material);
+
+                const pointsGroup = new THREE.Group();
+                pointsGroup.add(points);
+                scene.add(pointsGroup);
+
+                // --- CAPA DE FADE PARA TRAIL ---
+                // Un plano negro transparente que cubre la cámara
+                const fadeGeo = new THREE.PlaneGeometry(100, 100);
+                const fadeMat = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    transparent: true,
+                    opacity: 0.1
+                });
+                const fadePlane = new THREE.Mesh(fadeGeo, fadeMat);
+                // Lo añadimos a la cámara para que siempre esté enfrente
+                camera.add(fadePlane);
+                fadePlane.position.z = -1; // Justo delante de la cámara
+                scene.add(camera); // Importante añadir la cámara a la escena si tiene hijos
+
+
+
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = width; offCanvas.height = height;
+                const ctx = offCanvas.getContext('2d');
+
+                log("Visualizador Activo. Carga tu música a la derecha!");
+
+                function animate() {
+                    requestAnimationFrame(animate);
+
+                    // Throttle: Calcular tiempo transcurrido
+                    let now = Date.now();
+                    elapsed = now - then;
+
+                    // Si ha pasado suficiente tiempo, dibujamos
+                    if (elapsed > fpsInterval) {
+                        // Ajustamos 'then' restando el residuo para mantener sincronía
+                        then = now - (elapsed % fpsInterval);
+
+                        ctx.drawImage(video, 0, 0, width, height);
+                        const imageData = ctx.getImageData(0, 0, width, height).data;
+                        const posArr = geo.attributes.position.array;
+                        const colArr = geo.attributes.color.array;
+
+                        // 10 Bandas de frecuencia
+                        let bands = new Array(10).fill(0);
+                        if (analyser) {
+                            analyser.getByteFrequencyData(dataArray);
+                            const chunkSize = Math.floor(dataArray.length / 10);
+                            for (let b = 0; b < 10; b++) {
+                                let sum = 0;
+                                for (let j = 0; j < chunkSize; j++) sum += dataArray[b * chunkSize + j];
+                                bands[b] = (sum / chunkSize) / 255;
+                            }
+                        }
+                        const bass = bands[0];
+                        const time = Date.now() * 0.002;
+
+                        // --- LÓGICA MOOD SWINGER (Cambio de color) ---
+                        if (config.autoMood) {
+                            if (Date.now() - lastHueSwitchTime > 15000 || bass > 0.95) {
+                                targetBaseHue = Math.random() * 360;
+                                lastHueSwitchTime = Date.now();
+                            }
+                        }
+                        currentBaseHue += (targetBaseHue - currentBaseHue) * 0.05;
+
+                        for (let i = 0; i < width * height; i++) {
+                            const r = imageData[i * 4];
+                            const g = imageData[i * 4 + 1];
+                            const b = imageData[i * 4 + 2];
+
+                            let bright = (r + g + b) / 3 / 255;
+                            // Brillo / Ganancia dinámica
+                            bright = Math.pow(bright, 0.8) * config.gain;
+                            if (bright > 1) bright = 1;
+
+                            const groupIdx = Math.floor(bright * 9.99);
+                            const groupAudio = bands[groupIdx];
+
+                            // 1. PROFUNDIDAD CONFIGURABLE MEJORADA
+                            // - Base Depth: Estructura fija (expansion)
+                            // - Audio Depth: "Golpe" directo (jump) + Expansión rítmica
+
+                            // A) Expansión base (lo que define la forma 3D de la imagen)
+                            let zStructure = (bright - 0.5) * -config.baseDepth;
+
+                            // B) Reactividad al Audio (Evitar el "punto muerto" en el gris medio)
+                            // Si el pixel es gris (bright 0.5), igual debe saltar con la música.
+                            let audioKick = groupAudio * config.audioDepth;
+
+                            // Combinamos: Estructura + (Dirección * Kick)
+                            // Usamos Math.sign para que la expansión respete la dirección, pero si es 0 (gris), saltamos positivo.
+                            let direction = (bright - 0.5);
+                            if (Math.abs(direction) < 0.05) direction = 0.5; // Forzar movimiento para los grises
+
+                            let zAudio = direction * -audioKick;
+
+                            // Factor de salto global (para que todo baile un poco)
+                            let globalJump = (bass * config.audioDepth * 0.3);
+
+                            let finalZ = (zStructure + zAudio + globalJump) * config.exaggeration;
+
+                            // EXCLUSIVIDAD DE EFECTOS
+                            // Si no hay audio (silencio), mantenemos una ola suave "idle"
+                            let waveDriver = (groupAudio > 0.01) ? groupAudio : 0.2;
+
+                            if (config.effectMode === 'wave') {
+                                finalZ += Math.sin(time + (i % width) * 0.1) * (waveDriver * config.waveInt);
+                            } else if (config.effectMode === 'ripple') {
+                                // LÓGICA DE RIPPLES (Gota de agua)
+                                let rippleEffect = 0;
+                                const px = (i % width) - width / 2;
+                                const py = (Math.floor(i / width)) - height / 2;
+
+                                activeRipples.forEach(r => {
+                                    const dx = px - r.x;
+                                    const dy = py - r.y;
+                                    const d = Math.sqrt(dx * dx + dy * dy) * 0.05;
+                                    const age = time - r.startTime;
+                                    if (age > 0 && age < 6) {
+                                        // Onda expansiva desde el punto de impacto r.x, r.y
+                                        const s = Math.sin(d * 4 - age * 15);
+                                        const atten = Math.exp(-d * 0.15) * Math.exp(-age * 0.45);
+                                        rippleEffect += s * atten * config.rippleInt;
+                                    }
+                                });
+                                finalZ += rippleEffect;
+                            }
+
+                            // --- TRANSFORMACIÓN DE COORDENADAS (MORPHING) ---
+                            const ix = (i % width) - width / 2;
+                            const iy = (Math.floor(i / width)) - height / 2;
+
+                            if (config.viewMode === 'cylinder') {
+                                // Proyección Cilíndrica
+                                const radius = 100 + finalZ * 8.0; // Amplificado x4 (Base 2.0 -> 8.0)
+                                const angle = (ix / width) * Math.PI * 2;
+
+                                posArr[i * 3] = Math.sin(angle) * radius;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = Math.cos(angle) * radius;
+                            } else if (config.viewMode === 'sphere') {
+                                // Proyección Esférica
+                                const radius = 120 + finalZ * 8.0; // Amplificado x4
+                                const theta = (ix / width) * Math.PI * 2;
+                                const phi = ((iy / height) + 0.5) * Math.PI;
+
+                                posArr[i * 3] = radius * Math.sin(phi) * Math.sin(theta);
+                                posArr[i * 3 + 1] = radius * -Math.cos(phi);
+                                posArr[i * 3 + 2] = radius * Math.sin(phi) * Math.cos(theta);
+
+                            } else if (config.viewMode === 'spiral') {
+                                // Proyección Espiral / ADN
+                                const radius = 80 + finalZ * 8.0; // Amplificado x4
+                                const angle = (iy / height) * Math.PI * 10 + (time * 0.5);
+
+                                posArr[i * 3] = Math.sin(angle + (ix / width) * 2) * radius;
+                                posArr[i * 3 + 1] = iy * 1.5;
+                                posArr[i * 3 + 2] = Math.cos(angle + (ix / width) * 2) * radius;
+
+                            } else if (config.viewMode === 'vortex') {
+                                // Vórtice: Profundidad infinita en el centro
+                                const angle = Math.atan2(iy, ix) + (time * 0.5);
+                                const dist = Math.sqrt(ix * ix + iy * iy);
+                                const depth = 10000 / (dist + 50); // Singularidad central
+
+                                posArr[i * 3] = Math.cos(angle) * (dist + finalZ * 8.0); // Amplificado
+                                posArr[i * 3 + 1] = Math.sin(angle) * (dist + finalZ * 8.0);
+                                posArr[i * 3 + 2] = -depth + finalZ * 8.0;
+
+                            } else if (config.viewMode === 'torus') {
+                                // Toroide
+                                const R = 150;
+                                const r = 60 + finalZ * 6.0; // Amplificado x4 (1.5 -> 6.0)
+                                const u = (ix / width) * Math.PI * 2;
+                                const v = (iy / height) * Math.PI * 2;
+
+                                posArr[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+                                posArr[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+                                posArr[i * 3 + 2] = r * Math.sin(v);
+
+                            } else if (config.viewMode === 'book') {
+                                // Libro: Doblar plano en dos
+                                const angle = Math.abs(ix / width) * Math.PI;
+                                const fold = (ix < 0) ? -1 : 1;
+                                posArr[i * 3] = Math.sin(angle) * 150 * fold;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = -Math.cos(angle) * 150 + finalZ;
+
+                            } else if (config.viewMode === 'scatter') {
+                                // Explosión: Dispersión basada en índice pseudo-aleatorio
+                                const rnd = Math.sin(i * 12.9898) * 43758.5453;
+                                const exp = bass * 200 * config.gain; // Nivel de explosión por audio
+                                posArr[i * 3] = ix + Math.cos(rnd) * exp;
+                                posArr[i * 3 + 1] = iy + Math.sin(rnd) * exp;
+                                posArr[i * 3 + 2] = finalZ + Math.sin(rnd * 2) * exp;
+
+                            } else if (config.viewMode === 'hourglass') {
+                                // Reloj de Arena: Estrechar el centro Y
+                                const neck = Math.abs(iy / (height / 2)) + 0.1;
+                                posArr[i * 3] = ix * neck * 2;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = finalZ * neck;
+
+                            } else if (config.viewMode === 'kaleido') {
+                                // Caleidoscopio: Reflejo radial séptuple
+                                const angle = Math.atan2(iy, ix);
+                                const dist = Math.sqrt(ix * ix + iy * iy);
+                                const segment = (Math.PI * 2) / 7;
+                                const newAngle = (angle % segment) + time * 0.2;
+
+                                posArr[i * 3] = Math.cos(newAngle) * dist;
+                                posArr[i * 3 + 1] = Math.sin(newAngle) * dist;
+                                posArr[i * 3 + 2] = finalZ;
+
+                            } else {
+                                // Plano Original
+                                posArr[i * 3] = ix;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = finalZ;
+                            }
+
+                            // 2. COLOR POR GRUPOS
+                            let hue = currentBaseHue + (groupAudio * 240) + (groupIdx * 12);
+                            hue = hue % 360;
+
+                            let s = 0.95;
+                            let l = 0.15 + (bright * 0.5) + (groupAudio * 0.2);
+
+                            let c_val = (1 - Math.abs(2 * l - 1)) * s;
+                            let x_val = c_val * (1 - Math.abs((hue / 60) % 2 - 1));
+                            let m_val = l - c_val / 2;
+                            let r_f, g_f, b_f;
+
+                            if (hue < 60) { r_f = c_val; g_f = x_val; b_f = 0; }
+                            else if (hue < 120) { r_f = x_val; g_f = c_val; b_f = 0; }
+                            else if (hue < 180) { r_f = 0; g_f = c_val; b_f = x_val; }
+                            else if (hue < 240) { r_f = 0; g_f = x_val; b_f = c_val; }
+                            else if (hue < 300) { r_f = x_val; g_f = 0; b_f = c_val; }
+                            else { r_f = c_val; g_f = 0; b_f = x_val; }
+
+                            colArr[i * 3] = r_f + m_val;
+                            colArr[i * 3 + 1] = g_f + m_val;
+                            colArr[i * 3 + 2] = b_f + m_val;
+                        }
+                        geo.attributes.position.needsUpdate = true;
+                        geo.attributes.color.needsUpdate = true;
+
+                        material.size = config.pointSize + (bass * 0.25);
+
+                        // --- MOTOR DE LLUVIA RÍTMICA RELATIVA ---
+                        smoothedBass += (bass - smoothedBass) * 0.04;
+                        const relativePeak = bass - smoothedBass;
+
+                        if (relativePeak > 0.05 && Date.now() - lastBassHitTime > 120) {
+                            if (config.autoRotate) {
+                                rotVect.x = (Math.random() - 0.5) * 3;
+                                rotVect.y = (Math.random() - 0.5) * 3;
+                                rotVect.z = (Math.random() - 0.5) * 1.5;
+                            }
+
+                            // DISPARAR GOTAS ALEATORIAS (Solo si el modo Lluvia está activo)
+                            if (config.effectMode === 'ripple') {
+                                const numDrops = Math.floor(relativePeak * 40) + 1;
+                                for (let k = 0; k < numDrops; k++) {
+                                    activeRipples.push({
+                                        x: (Math.random() - 0.5) * width * 1.8,
+                                        y: (Math.random() - 0.5) * height * 1.8,
+                                        startTime: time
+                                    });
+                                }
+                                while (activeRipples.length > 60) activeRipples.shift();
+                            }
+                            lastBassHitTime = Date.now();
+                        }
+
+                        if (config.autoRotate) {
+                            rotVect.x += Math.sin(time * 0.1) * 0.005;
+                            rotVect.z += Math.cos(time * 0.1) * 0.005;
+                            const speed = config.rotateSpeed * 0.01;
+                            pointsGroup.rotation.x += rotVect.x * speed;
+                            pointsGroup.rotation.y += rotVect.y * speed;
+                            pointsGroup.rotation.z += rotVect.z * speed;
+                            controls.autoRotate = false;
+                        } else {
+                            controls.autoRotate = false;
+                        }
+
+                        controls.update();
+
+                        // --- RENDER ---
+                        // Si Trail está activo, NO limpiamos, solo dibujamos el plano semi-transparente
+                        if (config.trailData) {
+                            fadePlane.visible = true;
+                        } else {
+                            fadePlane.visible = false;
+                            renderer.clear(); // Limpieza estándar
+                        }
+
+                        renderer.render(scene, camera);
+                    }
+                }
+                animate();
+
+                // Lógica del botón de reinicio
+                const rBtn = document.getElementById('resetBtn');
+                rBtn.style.display = 'block';
+                rBtn.onclick = () => {
+                    camera.position.set(0, 0, 450);
+                    pointsGroup.rotation.set(0, 0, 0); // Reset rotación 3D del objeto
+                    controls.reset();
+                    log("Vista y rotación reiniciadas.");
+                };
+
+            } catch (e) {
+                log("ERROR: " + e.message, true);
+            }
+        }
+        document.getElementById('btn').onclick = () => {
+            log("DEBUG: Click detected on ENCENDER CAMARA button");
+            try {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => log("AudioContext Resumed by User"));
+                }
+                startVisualizer();
+            } catch (e) {
+                log("ERROR clicking start button: " + e.message, true);
+            }
+        };
+
+        // --- SISTEMA DE AUTO-INICIO (Permissions API) ---
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'camera' }).then(res => {
+                if (res.state === 'granted') {
+                    log("Permisos detectados. Iniciando automáticamente...");
+                    startVisualizer();
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

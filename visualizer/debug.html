@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>DEBUG V3</title>
+    <style>
+        body {
+            background: #111;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+        }
+
+        #console {
+            border: 1px solid #0f0;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background: #000;
+        }
+
+        .err {
+            color: #f00;
+            font-weight: bold;
+        }
+
+        .ok {
+            color: #0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>🛡️ DIAGNÓSTICO FORZADO V3</h2>
+    <div id="console"></div>
+
+    <script src="three.min.js"></script>
+
+    <script>
+        const con = document.getElementById('console');
+        function print(msg, type = '') {
+            const d = document.createElement('div');
+            d.className = type;
+            d.textContent = `[${new Date().toLocaleTimeString()}] > ${msg}`;
+            con.appendChild(d);
+            con.scrollTop = con.scrollHeight;
+        }
+
+        async function init() {
+            print("Iniciando prueba...");
+
+            // Test de libreria
+            if (typeof THREE !== 'undefined') {
+                print("Three.js cargado OK.", "ok");
+            } else {
+                print("ERROR: Three.js no cargó. Verifica que 'three.min.js' existe en la carpeta.", "err");
+                return;
+            }
+
+            // Test de Cámara
+            print("Solicitando cámara...");
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                print("CÁMARA CONECTADA CORRECTAMENTE.", "ok");
+
+                // Crear video oculto
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+
+                // Crear Escena 3D
+                print("Iniciando render 3D...");
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(renderer.domElement);
+
+                const geometry = new THREE.BoxGeometry(50, 50, 50);
+                const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+                const cube = new THREE.Mesh(geometry, material);
+                scene.add(cube);
+                camera.position.z = 100;
+
+                print("¡TODO LISTO! Deberías ver un cubo verde girando abajo.", "ok");
+
+                function animate() {
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
+                }
+                animate();
+
+            } catch (e) {
+                print("FALLO CÁMARA: " + e.message, "err");
+                print("Prueba abrir esto en Microsoft Edge si Chrome falla.");
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>

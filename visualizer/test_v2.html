@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <title>TEST FINAL FASE 1 - V2</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            font-family: sans-serif;
+            color: #00ff00;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid #00ff00;
+            z-index: 1000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .line {
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+
+        .ok {
+            color: #00ff00;
+        }
+
+        .error {
+            color: #ff0000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui">
+        <div style="font-size: 18px; margin-bottom: 10px;">🛡️ MODO DIAGNÓSTICO V2</div>
+        <div id="log"></div>
+    </div>
+
+    <script src="three.min.js"></script>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        function addLog(text, type = '') {
+            const d = document.createElement('div');
+            d.className = 'line ' + type;
+            d.textContent = `> ${text}`;
+            logDiv.appendChild(d);
+        }
+
+        async function start() {
+            addLog("Iniciando motor...");
+
+            // 1. Test de Three.js
+            if (typeof THREE === 'undefined') {
+                addLog("ERROR: No se encontró three.min.js", "error");
+                return;
+            }
+            addLog("Three.js cargado correctamente.", "ok");
+
+            // 2. Setup Escena
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Cubo de prueba (para ver si el 3D funciona sin cámara)
+            const testBox = new THREE.Mesh(
+                new THREE.BoxGeometry(20, 20, 20),
+                new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true })
+            );
+            testBox.position.set(-50, 0, 0);
+            scene.add(testBox);
+            addLog("Cubo de prueba 3D listo (lado izquierdo).", "ok");
+
+            // 3. Captura de Cámara
+            addLog("Solicitando acceso a la cámara...");
+            let video;
+            try {
+                video = document.createElement('video');
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                await video.play();
+                addLog("CÁMARA CONECTADA.", "ok");
+            } catch (e) {
+                addLog("FALLO CÁMARA: " + e.message, "error");
+                addLog("Recomendación: Usa Chrome o Edge y dale a 'Permitir'.");
+                // Animación mínima solo con el cubo si falla la cámara
+                function simpleLoop() {
+                    testBox.rotation.x += 0.01;
+                    testBox.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(simpleLoop);
+                }
+                simpleLoop();
+                return;
+            }
+
+            // 4. Nube de Puntos
+            const w = 160, h = 120;
+            const geometry = new THREE.BufferGeometry();
+            const pos = new Float32Array(w * h * 3);
+            const col = new Float32Array(w * h * 3);
+
+            for (let i = 0; i < w * h; i++) {
+                pos[i * 3] = (i % w) - w / 2;
+                pos[i * 3 + 1] = -(Math.floor(i / w)) + h / 2;
+                pos[i * 3 + 2] = 0;
+                col[i * 3 + 1] = 1.0;
+            }
+            geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+            const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 2, vertexColors: true }));
+            scene.add(points);
+            camera.position.z = 200;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            addLog("¡TODO FUNCIONANDO! Deberías ver puntos ahora.", "ok");
+
+            function mainLoop() {
+                testBox.rotation.y += 0.02;
+
+                ctx.drawImage(video, 0, 0, w, h);
+                const pixels = ctx.getImageData(0, 0, w, h).data;
+                const pArray = geometry.attributes.position.array;
+                const cArray = geometry.attributes.color.array;
+
+                for (let i = 0; i < w * h; i++) {
+                    const b = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) / 3 / 255;
+                    pArray[i * 3 + 2] = b * 80;
+                    cArray[i * 3 + 1] = 0.3 + b * 0.7;
+                }
+                geometry.attributes.position.needsUpdate = true;
+                geometry.attributes.color.needsUpdate = true;
+                points.rotation.y += 0.005;
+
+                renderer.render(scene, camera);
+                requestAnimationFrame(mainLoop);
+            }
+            mainLoop();
+        }
+
+        window.addEventListener('load', start);
+    </script>
+</body>
+
+</html>

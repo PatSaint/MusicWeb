@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROBANDO... (Fase 1)</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: sans-serif;
+      color: #00ff00;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid #00ff00;
+      z-index: 100;
+      min-width: 250px;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+
+    .error {
+      color: #ff5555 !important;
+      font-weight: bold;
+    }
+
+    #btn-retry {
+      background: #00ff00;
+      color: black;
+      border: none;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="ui">
+    <strong>ESTADO DEL VISUALIZADOR</strong>
+    <div id="log" class="status"></div>
+    <button id="btn-retry" onclick="location.reload()">REINTENTAR (Ctrl+F5)</button>
+  </div>
+
+  <script src="three.min.js"></script>
+
+  <script>
+    const logDiv = document.getElementById('log');
+    function report(msg, isError = false) {
+      const div = document.createElement('div');
+      if (isError) {
+        div.className = 'error';
+        document.getElementById('btn-retry').style.display = 'block';
+      }
+      div.textContent = `> ${msg}`;
+      logDiv.appendChild(div);
+    }
+
+    async function run() {
+      report("Iniciando script...");
+
+      // Verificar si Three.js cargó
+      if (typeof THREE === 'undefined') {
+        report("FALLO: La librería 3D no cargó.", true);
+        return;
+      }
+      report("Librería 3D lista.");
+
+      report("Buscando cámara...");
+      let video;
+      try {
+        video = document.createElement('video');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        await video.play();
+        report("Cámara conectada OK.");
+      } catch (e) {
+        report("ERROR CÁMARA: " + e.message, true);
+        report("Pista: Asegúrate de estar en http://localhost:8001");
+        return;
+      }
+
+      report("Preparando escena 3D...");
+      const width = 160;
+      const height = 120;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 250;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(width * height * 3);
+      const colors = new Float32Array(width * height * 3);
+
+      for (let i = 0; i < width * height; i++) {
+        const x = i % width;
+        const y = Math.floor(i / width);
+        positions[i * 3] = x - width / 2;
+        positions[i * 3 + 1] = -(y - height / 2);
+        positions[i * 3 + 2] = 0;
+        colors[i * 3] = 0; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 0;
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({ size: 1.5, vertexColors: THREE.VertexColors });
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      report("¡TODO OK! Iniciando render...");
+
+      function loop() {
+        ctx.drawImage(video, 0, 0, width, height);
+        const data = ctx.getImageData(0, 0, width, height).data;
+        const pos = geometry.attributes.position.array;
+        const col = geometry.attributes.color.array;
+
+        for (let i = 0; i < width * height; i++) {
+          const r = data[i * 4];
+          const g = data[i * 4 + 1];
+          const b = data[i * 4 + 2];
+          const bright = (r + g + b) / 3 / 255;
+
+          pos[i * 3 + 2] = bright * 100;
+          col[i * 3 + 1] = 0.4 + bright * 0.6;
+        }
+
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.color.needsUpdate = true;
+        points.rotation.y += 0.005;
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(loop);
+      }
+
+      loop();
+    }
+
+    // Ejecutar al cargar la página
+    window.addEventListener('load', run);
+  </script>
+</body>
+
+</html>
