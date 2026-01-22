@@ -1,173 +1,1954 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PROBANDO... (Fase 1)</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
-      font-family: sans-serif;
-      color: #00ff00;
-    }
+    <meta charset="utf-8" />
+    <title>VISUALIZADOR 3D - VERSION FINAL</title>
+    <style>
+        body {
+            background: #050505;
+            color: #00ff00;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-    canvas {
-      display: block;
-    }
+        #setup-ui {
+            text-align: center;
+            background: rgba(0, 20, 0, 0.8);
+            padding: 40px;
+            border: 2px solid #00ff00;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            z-index: 100;
+        }
 
-    #ui {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 15px;
-      border-radius: 5px;
-      border: 1px solid #00ff00;
-      z-index: 100;
-      min-width: 250px;
-    }
+        button {
+            background: #eeff00;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
 
-    .status {
-      font-size: 13px;
-      color: #aaa;
-      margin-top: 5px;
-    }
+        button:hover {
+            background: #ccff00;
+            transform: scale(1.05);
+        }
 
-    .error {
-      color: #ff5555 !important;
-      font-weight: bold;
-    }
+        #diag {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 350px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-size: 11px;
+            color: #0f0;
+            overflow: auto;
+            pointer-events: none;
+            text-align: left;
+        }
 
-    #btn-retry {
-      background: #00ff00;
-      color: black;
-      border: none;
-      padding: 5px 10px;
-      margin-top: 10px;
-      cursor: pointer;
-      display: none;
-    }
-  </style>
+        .error {
+            color: #ff3333;
+            font-weight: bold;
+        }
+
+        /* ESTILOS PLAYLIST FASE 2 */
+        #playlist-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0, 10, 0, 0.9);
+            border-left: 1px solid #0f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 500;
+            transition: transform 0.3s;
+        }
+
+        #playlist-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f0;
+            text-align: center;
+        }
+
+        #track-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #track-list li {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #track-list li:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        #track-list li.active {
+            background: rgba(0, 255, 0, 0.3);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #controls {
+            padding: 20px;
+            background: rgba(0, 20, 0, 1);
+            border-top: 1px solid #0f0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            min-width: 40px;
+            border-radius: 4px;
+        }
+
+        .ctrl-btn:hover {
+            background: #222;
+            color: #0f0;
+            border-color: #0f0;
+        }
+
+        .mode-btn.active {
+            color: #0f0;
+            border-color: #0f0;
+            box-shadow: inset 0 0 5px #0f0;
+        }
+
+        /* --- CONFIG PANEL --- */
+        #config-panel {
+            padding: 15px;
+            background: #080808;
+            border-top: 1px solid #0f0;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .config-group {
+            margin-bottom: 15px;
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type=range] {
+            flex: 1;
+            height: 4px;
+            background: #222;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #0f0;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .val-display {
+            font-size: 11px;
+            color: #0f0;
+            min-width: 30px;
+            text-align: right;
+            font-family: monospace;
+        }
+
+        #folder-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 15px;
+            width: auto;
+            margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: normal;
+            cursor: pointer;
+            border-radius: 20px;
+            /* Más orgánico */
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        #folder-btn:hover {
+            background: rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .rec-btn {
+            background: #ff4444;
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+
+        .rec-btn.recording {
+            background: white;
+            color: red;
+            border: 2px solid red;
+            animation: none;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .rec-btn {
+            background: #ff4444;
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+
+        .rec-btn.recording {
+            background: white;
+            color: red;
+            border: 2px solid red;
+            animation: none;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+            }
+        }
+
+        .char-input {
+            width: 100%;
+            padding: 8px;
+            background: #222;
+            color: #0f0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+    </style>
 </head>
 
 <body>
 
-  <div id="ui">
-    <strong>ESTADO DEL VISUALIZADOR</strong>
-    <div id="log" class="status"></div>
-    <button id="btn-retry" onclick="location.reload()">REINTENTAR (Ctrl+F5)</button>
-  </div>
+    <div id="setup-ui">
+        <h1 style="margin-top:0">Visualizador 3D - Fase 1</h1>
+        <p>Para encender la cámara, pulsa el botón amarillo:</p>
+        <button id="btn">ENCENDER CÁMARA</button>
+    </div>
 
-  <script src="three.min.js"></script>
+    <div id="diag">
+        <div>[INFO] Esperando inicio...</div>
+    </div>
 
-  <script>
-    const logDiv = document.getElementById('log');
-    function report(msg, isError = false) {
-      const div = document.createElement('div');
-      if (isError) {
-        div.className = 'error';
-        document.getElementById('btn-retry').style.display = 'block';
-      }
-      div.textContent = `> ${msg}`;
-      logDiv.appendChild(div);
-    }
+    <!-- PANEL DE PLAYLIST -->
+    <div id="playlist-panel">
+        <div id="playlist-header">
+            <h3>MUSIC PLAYLIST</h3>
+            <button id="folder-btn">SELECCIONAR CARPETA</button>
+            <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
+        </div>
+        <ul id="track-list">
+            <li style="color: #666; text-align: center; padding: 20px;">Sin canciones cargadas</li>
+        </ul>
+        <div id="controls">
+            <button class="ctrl-btn" id="prevBtn" title="Anterior">⏮</button>
+            <button class="ctrl-btn" id="playPauseBtn" title="Play/Pause">►</button>
+            <button class="ctrl-btn" id="stopBtn" title="Stop">■</button>
+            <button class="ctrl-btn" id="nextBtn" title="Siguiente">⏭</button>
+            <button class="ctrl-btn mode-btn" id="repeatBtn" title="Repetir">🔄</button>
+            <button class="ctrl-btn mode-btn" id="shuffleBtn" title="Aleatorio">🔀</button>
+        </div>
 
-    async function run() {
-      report("Iniciando script...");
+        <!-- SECCION CÁMARA (NUEVA) -->
+        <div id="camera-section"
+            style="border-top: 1px solid #0f0; background: #001100; padding: 15px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleCameraSec()">
+                <span>📷 CÁMARA & COLOR</span>
+                <span id="camera-caret">▼</span>
+            </h4>
+            <div id="camera-controls" style="display: none;">
+                <div class="config-group">
+                    <label>Modo de Color</label>
+                    <select id="cam-colorMode"
+                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
+                        <option value="neon">Neón (Reactivo)</option>
+                        <option value="real">Original (Cámara)</option>
+                    </select>
+                </div>
 
-      // Verificar si Three.js cargó
-      if (typeof THREE === 'undefined') {
-        report("FALLO: La librería 3D no cargó.", true);
-        return;
-      }
-      report("Librería 3D lista.");
+                <!-- SUB-OPCIONES PARA MODO REAL -->
+                <div id="real-fx-options"
+                    style="display:none; margin-top:10px; padding-left:10px; border-left: 2px solid #555;">
+                    <label style="font-size:10px; color:#aaa; margin-bottom:5px; display:block;">EFECTOS DE
+                        CÁMARA</label>
 
-      report("Buscando cámara...");
-      let video;
-      try {
-        video = document.createElement('video');
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        await video.play();
-        report("Cámara conectada OK.");
-      } catch (e) {
-        report("ERROR CÁMARA: " + e.message, true);
-        report("Pista: Asegúrate de estar en http://localhost:8001");
-        return;
-      }
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxFlash" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">⚡ Bass Flash</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxGlitch" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">👾 Chromatic Glitch</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxPulse" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">💓 Saturation Pulse</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxHueShift" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">🌈 Rhythmic Hue Shift</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-      report("Preparando escena 3D...");
-      const width = 160;
-      const height = 120;
+        <!-- ESTUDIO DE GRABACIÓN -->
+        <div id="recording-studio"
+            style="border-top: 1px solid #0f0; background: #002200; padding: 15px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleStudio()">
+                <span>🔴 ESTUDIO DE GRABACIÓN</span>
+                <span id="studio-caret">▼</span>
+            </h4>
+            <div id="studio-controls" style="display: none;">
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-      camera.position.z = 250;
+                <!-- Configuración -->
+                <div class="config-group">
+                    <label>Resolución de Video</label>
+                    <select id="rec-resolution"
+                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
+                        <option value="original">Original (Ventana)</option>
+                        <option value="tiktok">TikTok / Shorts (9:16)</option>
+                        <option value="landscape">HD Horizontal (16:9)</option>
+                        <option value="square">Instagram (1:1)</option>
+                    </select>
+                </div>
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+                <div class="config-group">
+                    <label>Audio</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="rec-audio" checked style="margin-right: 10px;">
+                        <span style="font-size: 11px; color: #aaa;">Incluir Audio del Sistema</span>
+                    </div>
+                </div>
 
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(width * height * 3);
-      const colors = new Float32Array(width * height * 3);
+                <!-- Acciones -->
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
 
-      for (let i = 0; i < width * height; i++) {
-        const x = i % width;
-        const y = Math.floor(i / width);
-        positions[i * 3] = x - width / 2;
-        positions[i * 3 + 1] = -(y - height / 2);
-        positions[i * 3 + 2] = 0;
-        colors[i * 3] = 0; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 0;
-      }
+                    <button class="ctrl-btn" id="btn-rec-track" style="border-color: #ffaa00; color: #ffaa00;">
+                        🎤 GRABAR CANCIÓN ACTUAL
+                    </button>
 
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                    <button class="ctrl-btn" id="btn-rec-playlist" style="border-color: #ff55ff; color: #ff55ff;">
+                        📀 GRABAR PLAYLIST COMPLETA
+                    </button>
 
-      const material = new THREE.PointsMaterial({ size: 1.5, vertexColors: THREE.VertexColors });
-      const points = new THREE.Points(geometry, material);
-      scene.add(points);
+                    <button class="ctrl-btn rec-btn" id="recordBtnManual">
+                        🔴 REC MANUAL (Start/Stop)
+                    </button>
 
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
+                </div>
+                <div id="rec-status"
+                    style="font-size: 10px; color: #ff4444; margin-top: 10px; text-align: center; display:none;">
+                    GRABANDO PROGRESIVA...
+                </div>
+            </div>
+        </div>
 
-      report("¡TODO OK! Iniciando render...");
+        <!-- PANEL MODO TEXTO (Neon Style) -->
+        <div id="text-mode-panel"
+            style="margin-top: 10px; border: 1px solid #333; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px;">
+            <h4 style="margin: 0 0 8px 0; color: #aaa; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="document.getElementById('text-content').style.display = document.getElementById('text-content').style.display=='none'?'block':'none'">
+                <span>🅰 Text Mode</span>
+                <span style="font-size: 8px;">▼</span>
+            </h4>
+            <div id="text-content" style="display: block;">
+                <div class="config-row" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="matrixText" value="PatSaint"
+                        style="flex: 1; background: #111; color: #0f0; border: 1px solid #333; padding: 3px; font-size: 10px; font-family: monospace; border-radius: 2px;"
+                        placeholder="Type...">
+                    <button id="updateTextBtn"
+                        style="width: 30px; background: #222; color: #fff; border: 1px solid #444; font-size: 9px; cursor: pointer; border-radius: 2px;">
+                        OK
+                    </button>
+                </div>
+                <div class="config-row">
+                    <button id="toggleTextModeBtn"
+                        style="width: 100%; background: #1a1a1a; color: #666; border: 1px solid #333; padding: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s; border-radius: 2px;">
+                        ENABLE TEXT
+                    </button>
+                </div>
+            </div>
+        </div>
 
-      function loop() {
-        ctx.drawImage(video, 0, 0, width, height);
-        const data = ctx.getImageData(0, 0, width, height).data;
-        const pos = geometry.attributes.position.array;
-        const col = geometry.attributes.color.array;
+        <!-- PANEL DE CONFIGURACIÓN ORIGINAL -->
+        <div id="config-panel">
+            <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 12px; border-bottom: 1px solid #222; padding-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleConfig()">
+                <span>⚙ CONFIGURACIÓN</span>
+                <span id="config-caret">▲</span>
+            </h4>
+            <div id="config-content" style="display: block;">
 
-        for (let i = 0; i < width * height; i++) {
-          const r = data[i * 4];
-          const g = data[i * 4 + 1];
-          const b = data[i * 4 + 2];
-          const bright = (r + g + b) / 3 / 255;
+                <div class="config-group">
+                    <label>Profundidad Base Z</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-baseDepth" min="1" max="50" value="9">
+                        <span class="val-display" id="val-baseDepth">9</span>
+                    </div>
+                </div>
 
-          pos[i * 3 + 2] = bright * 100;
-          col[i * 3 + 1] = 0.4 + bright * 0.6;
+                <div class="config-group">
+                    <label>Reactividad Audio (Z)</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-audioDepth" min="0" max="50" value="9">
+                        <span class="val-display" id="val-audioDepth">9</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Tamaño de Puntos</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-pointSize" min="0.1" max="2.0" step="0.05" value="0.45">
+                        <span class="val-display" id="val-pointSize">0.45</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Intensidad de Ondas</label>
+                    <div class="config-row">
+                        <label style="font-size: 12px; margin-right: 10px;"><input type="radio" name="effectMode"
+                                value="wave" checked> Olas Clásicas</label>
+                        <label style="font-size: 12px;"><input type="radio" name="effectMode" value="ripple"> Lluvia /
+                            Ripples</label>
+                    </div>
+
+                    <div class="config-row" id="panel-wave">
+                        <label style="font-size: 11px;">Intensidad Olas</label>
+                        <input type="range" id="cfg-waveInt" min="0" max="10" step="0.1" value="1.5">
+                        <span class="val-display" id="val-waveInt">1.5</span>
+                    </div>
+
+                    <div class="config-row" id="panel-ripple" style="display:none;">
+                        <label style="font-size: 11px;">Intensidad Lluvia</label>
+                        <input type="range" id="cfg-rippleInt" min="0" max="10" step="0.5" value="3.0">
+                        <span class="val-display" id="val-rippleInt">3.0</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Brillo / Ganancia</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-gain" min="0.5" max="5.0" step="0.1" value="1.5">
+                        <span class="val-display" id="val-gain">1.5</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Exageración Z (Volumen 3D)</label>
+                    <div class="config-row">
+                        <input type="range" id="cfg-exaggeration" min="1.0" max="10.0" step="0.5" value="2.0">
+                        <span class="val-display" id="val-exaggeration">2.0</span>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Geometría de Proyección</label>
+                    <div class="config-row">
+                        <select id="cfg-viewMode"
+                            style="width: 100%; background: #222; color: #0f0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                            <option value="plane">1. Plano Original</option>
+                            <option value="cylinder">2. Cilindro / Túnel</option>
+                            <option value="sphere">3. Esfera / Planeta</option>
+                            <option value="spiral">4. Espiral / ADN</option>
+                            <option value="vortex">5. Vórtice / Agujero Negro</option>
+                            <option value="torus">6. Toroide / Donut</option>
+                            <option value="book">7. Libro / Esquina</option>
+                            <option value="scatter">8. Explosión / Big Bang</option>
+                            <option value="hourglass">9. Reloj de Arena</option>
+                            <option value="kaleido">10. Caleidoscopio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Cambio de Color Auto</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-autoMood" checked style="margin-right: 10px;">
+                        <span style="font-size: 10px; color: #666;">Mood Swinger activado</span>
+                    </div>
+                </div>
+
+                <!-- CONTROLES FASE 4: TRAIL -->
+                <div class="config-group" style="display:none;">
+                    <label>Efecto Estela (Trail)</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-trailData" style="margin-right: 10px;">
+                        <span style="font-size: 10px; color: #666;">Activar Estelas Fantasma</span>
+                    </div>
+                </div>
+
+
+
+
+                <div class="config-group">
+                    <label>Auto Rotación</label>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-autoRotate" checked style="margin-right: 10px;">
+                        <input type="range" id="cfg-rotateSpeed" min="0" max="10" step="0.5" value="2.0">
+                        <span class="val-display" id="val-rotateSpeed">2.0</span>
+                    </div>
+                </div>
+
+
+                <button class="ctrl-btn" id="randomHueBtn" style="width: 100%; margin-top: 10px;">CAMBIAR COLOR
+                    AHORA</button>
+                <button class="ctrl-btn" id="resetDefaultsBtn"
+                    style="width: 100%; margin-top: 10px; border-color: #f44; color: #f44;">RESTAURAR VALORES</button>
+            </div> <!-- End config-content -->
+        </div>
+    </div>
+
+    <button id="resetBtn"
+        style="display:none; position:fixed; top:20px; right:320px; z-index:100; padding:10px 20px; font-size:14px; background:rgba(0,30,0,0.8); color:#0f0; border:1px solid #0f0; cursor:pointer; border-radius:5px; font-family:monospace; font-weight:bold;">REINICIAR
+        VISTA</button>
+
+    <script src="three.min.js"></script>
+    <!-- Usamos TrackballControls para rotación libre sin bloqueo de ejes -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+    <script>
+        const diagDiv = document.getElementById('diag');
+        function log(msg, isError = false) {
+            console.log(msg); // También a consola
+            const d = document.createElement('div');
+            if (isError) d.className = 'error';
+            d.textContent = `> ${msg}`;
+            diagDiv.appendChild(d);
+            diagDiv.scrollTop = diagDiv.scrollHeight;
+        }
+        log("DEBUG: Script Start - Line 443");
+
+        // --- SISTEMA DE AUDIO Y PLAYLIST ---
+        let audioContext, analyser, dataArray, source;
+        const audio = new Audio();
+        let playlist = [];
+        let currentIndex = -1;
+        let repeatMode = 0; // 0: None, 1: One, 2: All
+        let shuffleActive = false;
+        let originalOrder = [];
+
+        // --- MOTOR DE CICLOS DE COLOR (MOOD SWINGER) ---
+        let currentBaseHue = 120; // Empezamos en Matrix Green
+        let targetBaseHue = 120;
+        let lastHueSwitchTime = Date.now();
+        let rotVect = { x: 0.2, y: 0.8, z: 0.1 }; // Rotación inicial multi-eje
+        let lastBassHitTime = 0;
+        let activeRipples = [];
+        let smoothedBass = 0;
+
+        // --- GLOBALES (Para renderizado y grabación) ---
+        let renderer, scene, camera, pointsGroup;
+
+        // --- SISTEMA DE CONFIGURACIÓN DINÁMICO ---
+        const defaultConfig = {
+            baseDepth: 9,
+            audioDepth: 9,
+            pointSize: 0.45,
+            waveInt: 1.5,
+            gain: 1.5,
+            autoMood: true,
+            autoRotate: true,
+            rotateSpeed: 2.0,
+            rippleInt: 3.0,
+            effectMode: 'wave', // 'wave' o 'ripple'
+            viewMode: 'plane', // 'plane', 'cylinder'
+            exaggeration: 2.0,
+            trailData: false, // Estela visual
+            viewMode: 'plane', // 'plane', 'cylinder'
+            colorMode: 'neon', // 'neon' or 'real'
+            fxFlash: true,
+            fxGlitch: true,
+            fxPulse: true,
+            fxHueShift: false
+        };
+
+        let config = { ...defaultConfig };
+
+        function loadConfig() {
+            const saved = localStorage.getItem('visualizerConfig');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    config = { ...defaultConfig, ...parsed };
+                } catch (e) { console.error("Error loading config", e); }
+            }
+        }
+        loadConfig();
+
+        function saveConfig() {
+            localStorage.setItem('visualizerConfig', JSON.stringify(config));
         }
 
-        geometry.attributes.position.needsUpdate = true;
-        geometry.attributes.color.needsUpdate = true;
-        points.rotation.y += 0.005;
+        function updateUIFromConfig() {
+            const setVal = (id, val, isCheck = false) => {
+                const el = document.getElementById('cfg-' + id);
+                const disp = document.getElementById('val-' + id);
+                if (!el) return;
+                if (isCheck) el.checked = val;
+                else el.value = val;
+                if (disp) disp.textContent = val;
+            };
 
-        renderer.render(scene, camera);
-        requestAnimationFrame(loop);
-      }
+            setVal('baseDepth', config.baseDepth);
+            setVal('audioDepth', config.audioDepth);
+            setVal('pointSize', config.pointSize);
+            setVal('waveInt', config.waveInt);
+            setVal('gain', config.gain);
+            setVal('autoMood', config.autoMood, true);
+            setVal('autoRotate', config.autoRotate, true);
+            setVal('rotateSpeed', config.rotateSpeed);
+            setVal('rippleInt', config.rippleInt);
+            setVal('exaggeration', config.exaggeration);
+            setVal('trailData', config.trailData, true);
 
-      loop();
-    }
+            // FX Checkboxes
+            setVal('fxFlash', config.fxFlash, true);
+            setVal('fxGlitch', config.fxGlitch, true);
+            setVal('fxPulse', config.fxPulse, true);
+            setVal('fxHueShift', config.fxHueShift, true);
 
-    // Ejecutar al cargar la página
-    window.addEventListener('load', run);
-  </script>
+            // UI Color Mode Update
+            const colorModeSel = document.getElementById('cam-colorMode');
+            if (colorModeSel) colorModeSel.value = config.colorMode || 'neon';
+
+            // Toggle visibility of FX options
+            // Toggle visibility of FX options
+            const fxPanel = document.getElementById('real-fx-options');
+            if (fxPanel) fxPanel.style.display = (config.colorMode === 'real') ? 'block' : 'none';
+
+
+            // UI Mode Update
+            const radios = document.getElementsByName('effectMode');
+            for (let r of radios) {
+                if (r.value === config.effectMode) r.checked = true;
+            }
+            toggleEffectPanel(config.effectMode);
+
+            const viewSel = document.getElementById('cfg-viewMode');
+            if (viewSel) viewSel.value = config.viewMode;
+        }
+
+        function toggleEffectPanel(mode) {
+            document.getElementById('panel-wave').style.display = (mode === 'wave') ? 'flex' : 'none';
+            document.getElementById('panel-ripple').style.display = (mode === 'ripple') ? 'flex' : 'none';
+        }
+
+
+        function initConfigListeners() {
+            log("DEBUG: initConfigListeners() started");
+            try {
+                const bind = (id, prop, isCheck = false) => {
+                    const el = document.getElementById('cfg-' + id);
+                    const disp = document.getElementById('val-' + id);
+                    if (!el) return;
+                    el.oninput = () => {
+                        config[prop] = isCheck ? el.checked : parseFloat(el.value);
+                        if (disp) disp.textContent = el.value;
+                        saveConfig();
+                    };
+                };
+                bind('baseDepth', 'baseDepth');
+                bind('audioDepth', 'audioDepth');
+                bind('pointSize', 'pointSize');
+                bind('waveInt', 'waveInt');
+                bind('gain', 'gain');
+                bind('rotateSpeed', 'rotateSpeed');
+                bind('rippleInt', 'rippleInt');
+                bind('rippleInt', 'rippleInt');
+                bind('exaggeration', 'exaggeration');
+                bind('trailData', 'trailData', true);
+
+                // New FX Bindings
+                bind('fxFlash', 'fxFlash', true);
+                bind('fxGlitch', 'fxGlitch', true);
+                bind('fxPulse', 'fxPulse', true);
+                bind('fxHueShift', 'fxHueShift', true);
+
+
+                log("Listeners de configuración inicializados correctamente.");
+
+                const viewSel = document.getElementById('cfg-viewMode');
+                if (viewSel) {
+                    viewSel.onchange = (e) => {
+                        config.viewMode = e.target.value;
+                        saveConfig();
+                        log("Vista cambiada a: " + config.viewMode);
+                    };
+                }
+
+                // NUEVO LISTENER: Modo de Color
+                const colorModeSel = document.getElementById('cam-colorMode');
+                if (colorModeSel) {
+                    colorModeSel.onchange = (e) => {
+                        config.colorMode = e.target.value;
+
+                        // Toggle sub-panel options
+                        const fxPanel = document.getElementById('real-fx-options');
+                        if (fxPanel) fxPanel.style.display = (config.colorMode === 'real') ? 'block' : 'none';
+
+                        saveConfig();
+                        log("Modo Color: " + config.colorMode);
+                    };
+                }
+
+                const radios = document.getElementsByName('effectMode');
+                for (let r of radios) {
+                    r.onchange = (e) => {
+                        if (e.target.checked) {
+                            config.effectMode = e.target.value;
+                            toggleEffectPanel(config.effectMode);
+                            saveConfig();
+                        }
+                    };
+                }
+
+                const autoMoodEl = document.getElementById('cfg-autoMood');
+                if (autoMoodEl) {
+                    autoMoodEl.onchange = (e) => {
+                        config.autoMood = e.target.checked;
+                        saveConfig();
+                    };
+                }
+
+                const autoRotateEl = document.getElementById('cfg-autoRotate');
+                if (autoRotateEl) {
+                    autoRotateEl.onchange = (e) => {
+                        config.autoRotate = e.target.checked;
+                        saveConfig();
+                    };
+                }
+
+                document.getElementById('randomHueBtn').onclick = () => {
+                    targetBaseHue = Math.random() * 360;
+                    lastHueSwitchTime = Date.now();
+                    log("Color cambiado manualmente.");
+                };
+
+                document.getElementById('resetDefaultsBtn').onclick = () => {
+                    if (confirm("¿Restaurar todos los valores a los originales?")) {
+                        config = { ...defaultConfig };
+                        saveConfig();
+                        updateUIFromConfig();
+                        log("Valores restaurados por defecto.");
+                    }
+                };
+            } catch (e) {
+                log("ERROR in initConfigListeners: " + e.message, true);
+            }
+        }
+        initConfigListeners();
+        updateUIFromConfig();
+
+        // --- LÓGICA DE GRABACIÓN DE VIDEO ---
+
+        // --- LÓGICA DE GRABACIÓN DE VIDEO ---
+        // --- ESTUDIO DE GRABACIÓN & LÓGICA ---
+        function toggleCameraSec() {
+            const el = document.getElementById('camera-controls');
+            const caret = document.getElementById('camera-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
+        function toggleStudio() {
+            const el = document.getElementById('studio-controls');
+            const caret = document.getElementById('studio-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
+        function toggleConfig() {
+            const el = document.getElementById('config-content');
+            const caret = document.getElementById('config-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
+        const recBtnManual = document.getElementById('recordBtnManual');
+        const btnRecTrack = document.getElementById('btn-rec-track');
+        const btnRecPlaylist = document.getElementById('btn-rec-playlist');
+        const recStatus = document.getElementById('rec-status');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+        let recordingMode = 'manual'; // 'manual', 'track', 'playlist'
+        let audioDestination = null;
+
+        // Elementos UI de Grabación
+        recBtnManual.onclick = () => {
+            if (isRecording) stopRecording();
+            else startRecording('manual');
+        };
+
+        btnRecTrack.onclick = () => startRecording('track');
+        btnRecPlaylist.onclick = () => startRecording('playlist');
+
+
+        function getResolutionSize(mode) {
+            const h = window.innerHeight; // Usamos altura como base para calidad
+            switch (mode) {
+                case 'tiktok': return { w: 540, h: 960 }; // 9:16 (Calidad media para performance)
+                case 'landscape': return { w: 1280, h: 720 }; // 16:9
+                case 'square': return { w: 720, h: 720 }; // 1:1
+                default: return { w: window.innerWidth, h: window.innerHeight };
+            }
+        }
+
+        function startRecording(mode) {
+            if (isRecording) return;
+            recordingMode = mode;
+            log(`🎬 Iniciando Grabación: Modo ${mode.toUpperCase()}`);
+
+            try {
+                // 1. Configurar Audio (Si está activado)
+                const includeAudio = document.getElementById('rec-audio').checked;
+                let audioStream = null;
+
+                if (includeAudio && audioContext) {
+                    if (!audioDestination) {
+                        audioDestination = audioContext.createMediaStreamDestination();
+                        // Conectamos el source existente al destino de grabación
+                        // NOTA: 'source' debe existir (definido en initAudioContext o playTrack)
+                        if (source) source.connect(audioDestination);
+                    }
+                    audioStream = audioDestination.stream;
+                    log("🔊 Audio capturado para grabación.");
+                }
+
+                // 2. Configurar Resolución
+                const resMode = document.getElementById('rec-resolution').value;
+                const size = getResolutionSize(resMode);
+
+                // Redimensionar Renderer temporalmente
+                renderer.setSize(size.w, size.h);
+                camera.aspect = size.w / size.h;
+                camera.updateProjectionMatrix();
+
+
+                // 3. Preparar Stream Combinado
+                const canvasStream = renderer.domElement.captureStream(30);
+                const finalStream = new MediaStream();
+
+                // Agregar video
+                canvasStream.getVideoTracks().forEach(t => finalStream.addTrack(t));
+
+                // Agregar audio si existe
+                if (audioStream) {
+                    audioStream.getAudioTracks().forEach(t => finalStream.addTrack(t));
+                }
+
+                const options = { mimeType: 'video/webm; codecs=vp9' };
+                mediaRecorder = new MediaRecorder(finalStream, options);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    saveRecording();
+                    // Restaurar tamaño original
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // Actualizar UI
+                recStatus.style.display = 'block';
+                recStatus.textContent = `GRABANDO (${mode})...`;
+                recBtnManual.textContent = "⏹ DETENER";
+                recBtnManual.classList.add('recording');
+
+                // Lógica Específica por Modo
+                if (mode === 'track' || mode === 'playlist') {
+                    // Reiniciar canción actual
+                    audio.currentTime = 0;
+                    if (audio.paused) audio.play();
+                }
+
+            } catch (e) {
+                console.error(e);
+                log("❌ Error al iniciar grabación: " + e.message, true);
+            }
+        }
+
+        function stopRecording() {
+            if (!mediaRecorder || !isRecording) return;
+            mediaRecorder.stop();
+            isRecording = false;
+
+            // UI Reset
+            recStatus.style.display = 'none';
+            recBtnManual.textContent = "🔴 REC MANUAL (Start/Stop)";
+            recBtnManual.classList.remove('recording');
+
+            log("⏹ Grabación detenida. Procesando...");
+        }
+
+        function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `V3D_${recordingMode}_${Date.now()}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                recordedChunks = [];
+            }, 100);
+            log("✅ Video guardado.");
+        }
+
+        // --- CONTROLES DE REPRODUCCIÓN (Restaurados) ---
+        document.getElementById('prevBtn').onclick = () => {
+            let idx = currentIndex - 1;
+            if (idx < 0) idx = playlist.length - 1;
+            playTrack(idx);
+        };
+        document.getElementById('nextBtn').onclick = () => {
+            let idx = currentIndex + 1;
+            if (idx >= playlist.length) idx = 0;
+            playTrack(idx);
+        };
+
+
+
+        // --- MANEJO DE FIN DE CANCION (AUTO STOP / NEXT) ---
+        audio.onended = () => {
+            if (isRecording) {
+                if (recordingMode === 'track') {
+                    log("🎵 Canción terminada. Deteniendo grabación...");
+                    stopRecording();
+                } else if (recordingMode === 'playlist') {
+                    // Modo Playlist: Siguiente canción
+                    log("🎵 Canción terminada. Pasando a la siguiente...");
+
+                    // Lógica de Siguiente (Copiada/Adaptada de nextBtn)
+                    let nextIndex;
+                    if (shuffleActive) {
+                        nextIndex = Math.floor(Math.random() * playlist.length);
+                    } else {
+                        nextIndex = currentIndex + 1;
+                    }
+
+                    if (nextIndex >= playlist.length) {
+                        // Fin de playlist (si no es shuffle o repeat)
+                        if (repeatMode === 2 || shuffleActive) {
+                            // Si es repeat all o shuffle, sigue (pero cuidado con bucles infinitos en grabación)
+                            // Para grabación segura, mejor detener si llega al final lineal.
+                            // Pero el usuario pidió "Playlist". Si es lista finita, paramos.
+                            if (!shuffleActive && repeatMode !== 2) {
+                                log("🏁 Fin de Playlist. Deteniendo grabación.");
+                                stopRecording();
+                                return;
+                            }
+                            if (nextIndex >= playlist.length) nextIndex = 0; // Loop simple
+                        } else {
+                            log("🏁 Fin de Playlist. Deteniendo grabación.");
+                            stopRecording();
+                            return;
+                        }
+                    }
+
+                    playTrack(nextIndex);
+                    // IMPORTANTE: Asegurar que el source de audio nuevo se conecte al destino de grabación
+                    // initAudioContext reconecta el source. 
+
+                }
+            } else {
+                // Comportamiento normal (no grabación)
+                handleTrackEndNormal();
+            }
+        };
+
+        function handleTrackEndNormal() {
+            // Lógica normal de reproducción continua
+            let nextIndex = currentIndex + 1;
+            if (shuffleActive) {
+                nextIndex = Math.floor(Math.random() * playlist.length);
+            } else if (repeatMode === 2 && nextIndex >= playlist.length) {
+                nextIndex = 0;
+            }
+
+            if (nextIndex < playlist.length || repeatMode === 2 || shuffleActive) {
+                playTrack(nextIndex);
+            }
+        }
+
+
+        window.addEventListener('load', () => {
+            updateUIFromConfig();
+            log("Ready.");
+        });
+
+        const folderInput = document.getElementById('folder-input');
+        const trackListUI = document.getElementById('track-list');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+
+        document.getElementById('folder-btn').onclick = () => {
+            log("Click en Seleccionar Carpeta");
+            folderInput.click();
+        };
+
+        const defaultTrackFiles = [
+            "15 Rita BB!.mp3",
+            "22 15 Rita BB! (1).mp3",
+            "Chanfaina ON (PatSaint).mp3",
+            "Cumple Rita 15.mp3",
+            "Dont Touch Me_ La Tía Metiche (1).mp3",
+            "Dont Touch Me_ La Tía Metiche.mp3",
+            "Qué Palta_ Chanfaina de Jerga (Ya Pe xD).mp3"
+        ];
+
+        folderInput.onchange = (e) => {
+            const files = Array.from(e.target.files).filter(f =>
+                f.type.startsWith('audio/') ||
+                f.name.endsWith('.mp3') || f.name.endsWith('.wav') || f.name.endsWith('.ogg')
+            );
+
+            if (files.length === 0) {
+                log("No se encontraron archivos de audio en la carpeta.", true);
+                return;
+            }
+
+            playlist = files.map(f => ({
+                name: f.name,
+                url: URL.createObjectURL(f)
+            })).sort((a, b) => a.name.localeCompare(b.name));
+
+            renderPlaylist();
+            log(`Cargadas ${playlist.length} canciones.`);
+            playTrack(0);
+        };
+
+        function renderPlaylist() {
+            trackListUI.innerHTML = "";
+            playlist.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.textContent = track.name;
+                li.onclick = () => playTrack(index);
+                if (index === currentIndex) li.className = 'active';
+                trackListUI.appendChild(li);
+            });
+        }
+
+        function initDefaultPlaylist() {
+            log("DEBUG: initDefaultPlaylist() called");
+            try {
+                playlist = defaultTrackFiles.map(name => {
+                    const url = `./Music/${encodeURIComponent(name)}`;
+                    // log("DEBUG: Generated URL for " + name + ": " + url); // Uncomment for lots of spam
+                    return { name: name, url: url };
+                });
+                renderPlaylist();
+                log("DEBUG: Default playlist mapped. Count: " + playlist.length);
+            } catch (e) {
+                log("ERROR in initDefaultPlaylist: " + e.message, true);
+            }
+        }
+        initDefaultPlaylist();
+
+        function getNextIndex() {
+            if (shuffleActive && playlist.length > 0) return Math.floor(Math.random() * playlist.length);
+            let next = currentIndex + 1;
+            if (next >= playlist.length) next = 0;
+            return next;
+        }
+
+        function getPrevIndex() {
+            if (shuffleActive) return Math.floor(Math.random() * playlist.length); // Shuffle on prev behaves like random usually or history (simple random here)
+            let prev = currentIndex - 1;
+            if (prev < 0) prev = playlist.length - 1;
+            return prev;
+        }
+
+        function playTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            currentIndex = index;
+            const track = playlist[currentIndex];
+            audio.src = track.url;
+            audio.play();
+            playPauseBtn.textContent = "⏸";
+            renderPlaylist();
+            log(`Reproduciendo: ${track.name}`);
+            if (!audioContext) initAudioContext();
+        }
+
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            source = audioContext.createMediaElementSource(audio);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            // Si hay grabación activa y destino de audio, reconectamos para no perder audio en el video
+            if (isRecording && audioDestination) {
+                source.connect(audioDestination);
+            }
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+
+
+        playPauseBtn.onclick = () => {
+            if (playlist.length === 0) return;
+            // Asegurar que el contexto de audio esté activo
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (audio.paused) {
+                audio.play();
+                playPauseBtn.textContent = "⏸";
+            } else {
+                audio.pause();
+                playPauseBtn.textContent = "►";
+            }
+        };
+
+        document.getElementById('stopBtn').onclick = () => {
+            audio.pause();
+            audio.currentTime = 0;
+            playPauseBtn.textContent = "►";
+            log("Audio detenido.");
+        };
+
+        document.getElementById('nextBtn').onclick = () => {
+            if (playlist.length === 0) return;
+            playTrack(getNextIndex());
+        };
+
+        document.getElementById('prevBtn').onclick = () => {
+            if (playlist.length === 0) return;
+            playTrack(getPrevIndex());
+        };
+
+        const repeatBtn = document.getElementById('repeatBtn');
+        repeatBtn.onclick = () => {
+            repeatMode = (repeatMode + 1) % 3;
+            // 0: None (Off), 1: One (1), 2: All (All)
+            repeatBtn.classList.toggle('active', repeatMode > 0);
+            const icons = ["🔄", "🔂", "🔁"];
+            repeatBtn.textContent = icons[repeatMode];
+            const modes = ["Repetición Desactivada", "Repetir Una", "Repetir Todo"];
+            log(modes[repeatMode]);
+        };
+
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        shuffleBtn.onclick = () => {
+            shuffleActive = !shuffleActive;
+            shuffleBtn.classList.toggle('active', shuffleActive);
+            log(shuffleActive ? "Aleatorio Activado" : "Aleatorio Desactivado");
+        };
+
+        // --- MANEJO DE FIN DE CANCION (AUTO STOP / NEXT) ---
+        audio.onended = () => {
+            log(`DEBUG: audio.onended Fired. Recording: ${isRecording}, Mode: ${recordingMode}`);
+
+            if (isRecording) {
+                if (recordingMode === 'track') {
+                    // MODO TRACK: Parar al terminar la canción
+                    log("🎵 Canción terminada. Deteniendo grabación...");
+                    stopRecording();
+                } else if (recordingMode === 'playlist') {
+                    // MODO PLAYLIST: Siguiente canción
+                    log("🎵 Canción terminada. Verificando siguiente...");
+
+                    let nextIndex;
+                    if (shuffleActive) {
+                        nextIndex = Math.floor(Math.random() * playlist.length);
+                    } else {
+                        nextIndex = currentIndex + 1;
+                    }
+
+                    // Verificar Fin de Playlist
+                    if (nextIndex >= playlist.length) {
+                        // Si no hay repeat all ni shuffle, terminamos
+                        if (!shuffleActive && repeatMode !== 2) {
+                            log("🏁 Fin de Playlist. Deteniendo grabación.");
+                            stopRecording();
+                            return;
+                        }
+                        if (nextIndex >= playlist.length) nextIndex = 0; // Loop All
+                    }
+
+                    playTrack(nextIndex);
+                }
+            } else {
+                // COMPORTAMIENTO NORMAL
+                if (repeatMode === 1) {
+                    playTrack(currentIndex);
+                } else if (repeatMode === 2 || currentIndex < playlist.length - 1 || shuffleActive) {
+                    playTrack(getNextIndex());
+                    // Nota: getNextIndex() parece usar lógica interna, 
+                    // si no existe, usar lógica manual:
+                    // (shuffleActive ? random : currentIndex + 1)
+                } else {
+                    playPauseBtn.textContent = "►";
+                }
+            }
+        };
+
+        // --- MOTOR VISUAL 3D ---
+        async function startVisualizer() {
+            const starter = document.getElementById('btn').parentElement;
+            starter.style.display = 'none';
+            log("Iniciando motor...");
+
+            if (typeof THREE === 'undefined') {
+                log("ERROR: La librería 3D no está cargada.", true);
+                return;
+            }
+
+            try {
+                log("Solicitando permisos de cámara...");
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                log("Cámara permitida.");
+
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+                log("Captura de video activa.");
+
+                // RESOLUCIÓN ULTRA (640x480)
+                const width = 640, height = 480;
+
+                // Variables de Control de FPS (45 FPS Target)
+                const fpsInterval = 1000 / 45;
+                let then = Date.now();
+                let elapsed;
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.set(0, 0, 450);
+
+                renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.autoClear = false;
+                document.body.appendChild(renderer.domElement);
+
+                // REEMPLAZO POR TRACKBALL (Rotación libre)
+                const controls = new THREE.TrackballControls(camera, renderer.domElement);
+                controls.rotateSpeed = 3.0; // Velocidad de rotación
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+                controls.noZoom = false;
+                controls.noPan = false;
+                controls.staticMoving = false; // Inercia
+                controls.dynamicDampingFactor = 0.1; // Suavizado
+
+                const geo = new THREE.BufferGeometry();
+                const positions = new Float32Array(width * height * 3);
+                const colors = new Float32Array(width * height * 3);
+                // ATRIBUTO PARA TEXTO: Índice de caracter (0, 1, 2...)
+                const charIndices = new Float32Array(width * height);
+
+                for (let i = 0; i < width * height; i++) {
+                    positions[i * 3] = ((i % width) - width / 2) * 0.25;
+                    positions[i * 3 + 1] = (-(Math.floor(i / width)) + height / 2) * 0.25;
+                    positions[i * 3 + 2] = 0;
+                    colors[i * 3 + 1] = 1;
+                    charIndices[i] = i; // Cada punto sabe su índice único
+                }
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geo.setAttribute('charIndex', new THREE.BufferAttribute(charIndices, 1));
+
+                // --- TEXT PARTICLE SYSTEM ENGINE ---
+                const createTextAtlas = (text) => {
+                    const canvas = document.createElement('canvas');
+                    const size = 64; // Dimensión de cada letra
+                    canvas.width = size * text.length;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+
+                    // Fondo transparente
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.font = 'bold 50px monospace'; // Monospace para asegurar espaciado
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    for (let k = 0; k < text.length; k++) {
+                        ctx.fillText(text[k], (k * size) + (size / 2), size / 2);
+                    }
+
+                    const tex = new THREE.CanvasTexture(canvas);
+                    tex.magFilter = THREE.NearestFilter;
+                    tex.minFilter = THREE.NearestFilter;
+                    return { tex, charCount: text.length };
+                };
+
+                let currentText = "PatSaint";
+                let textData = createTextAtlas(currentText);
+
+                const textMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTexture: { value: textData.tex },
+                        uCharCount: { value: textData.charCount },
+                        pointSize: { value: 15.0 } // Reduced from 20 to 15 to reduce overlap
+                    },
+                    vertexShader: `
+                        uniform float pointSize;
+                        attribute float charIndex;
+                        varying float vCharIndex;
+                        varying vec3 vColor;
+                        void main() {
+                            vCharIndex = charIndex;
+                            vColor = color; 
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            gl_PointSize = pointSize * (400.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform sampler2D uTexture;
+                        uniform float uCharCount;
+                        varying float vCharIndex;
+                        varying vec3 vColor;
+                        void main() {
+                            float letterIdx = mod(vCharIndex, uCharCount);
+                            vec2 uv = gl_PointCoord;
+                            float u = (uv.x / uCharCount) + (letterIdx / uCharCount);
+                            // Invertimos Y para coincidir con Canvas
+                            vec4 texColor = texture2D(uTexture, vec2(u, 1.0 - uv.y)); 
+                            
+                            if (texColor.a < 0.5) discard; 
+                            // Aggressive reduction: 0.25 intensity to fix whiteout
+                            gl_FragColor = vec4(vColor * 0.25, 1.0) * texColor;
+                        }
+                    `,
+                    transparent: true,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                    vertexColors: true // CRITICAL FIX: Enable color attribute
+                });
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.45,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                const points = new THREE.Points(geo, material);
+
+                const pointsGroup = new THREE.Group();
+                pointsGroup.add(points);
+                pointsGroup.rotation.z = Math.PI; // Fix Upside Down Camera
+                scene.add(pointsGroup);
+
+                // --- CAPA DE FADE PARA TRAIL ---
+                // Un plano negro transparente que cubre la cámara
+                const fadeGeo = new THREE.PlaneGeometry(100, 100);
+                const fadeMat = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    transparent: true,
+                    opacity: 0.1
+                });
+                const fadePlane = new THREE.Mesh(fadeGeo, fadeMat);
+                // Lo añadimos a la cámara para que siempre esté enfrente
+                camera.add(fadePlane);
+                fadePlane.position.z = -1; // Justo delante de la cámara
+                scene.add(camera); // Importante añadir la cámara a la escena si tiene hijos
+
+
+
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = width; offCanvas.height = height;
+                const ctx = offCanvas.getContext('2d');
+
+                log("Visualizador Activo. Carga tu música a la derecha!");
+
+                function animate() {
+                    requestAnimationFrame(animate);
+
+                    // Throttle: Calcular tiempo transcurrido
+                    let now = Date.now();
+                    elapsed = now - then;
+
+                    // Si ha pasado suficiente tiempo, dibujamos
+                    if (elapsed > fpsInterval) {
+                        // Ajustamos 'then' restando el residuo para mantener sincronía
+                        then = now - (elapsed % fpsInterval);
+
+                        ctx.drawImage(video, 0, 0, width, height);
+                        const imageData = ctx.getImageData(0, 0, width, height).data;
+                        const posArr = geo.attributes.position.array;
+                        const colArr = geo.attributes.color.array;
+
+                        // 10 Bandas de frecuencia
+                        let bands = new Array(10).fill(0);
+                        if (analyser) {
+                            analyser.getByteFrequencyData(dataArray);
+                            const chunkSize = Math.floor(dataArray.length / 10);
+                            for (let b = 0; b < 10; b++) {
+                                let sum = 0;
+                                for (let j = 0; j < chunkSize; j++) sum += dataArray[b * chunkSize + j];
+                                bands[b] = (sum / chunkSize) / 255;
+                            }
+                        }
+                        const bass = bands[0];
+                        const treble = bands[2];
+                        const time = Date.now() * 0.002;
+
+                        // --- LÓGICA MOOD SWINGER (Cambio de color) ---
+                        if (config.autoMood) {
+                            if (Date.now() - lastHueSwitchTime > 15000 || bass > 0.95) {
+                                targetBaseHue = Math.random() * 360;
+                                lastHueSwitchTime = Date.now();
+                            }
+                        }
+                        currentBaseHue += (targetBaseHue - currentBaseHue) * 0.05;
+
+                        for (let i = 0; i < width * height; i++) {
+                            const r = imageData[i * 4];
+                            const g = imageData[i * 4 + 1];
+                            const b = imageData[i * 4 + 2];
+
+                            let bright = (r + g + b) / 3 / 255;
+                            // Brillo / Ganancia dinámica
+                            bright = Math.pow(bright, 0.8) * config.gain;
+                            if (bright > 1) bright = 1;
+
+                            const groupIdx = Math.floor(bright * 9.99);
+                            const groupAudio = bands[groupIdx];
+
+                            // 1. PROFUNDIDAD CONFIGURABLE MEJORADA
+                            // - Base Depth: Estructura fija (expansion)
+                            // - Audio Depth: "Golpe" directo (jump) + Expansión rítmica
+
+                            // A) Expansión base (lo que define la forma 3D de la imagen)
+                            let zStructure = (bright - 0.5) * -config.baseDepth;
+
+                            // B) Reactividad al Audio (Evitar el "punto muerto" en el gris medio)
+                            // Si el pixel es gris (bright 0.5), igual debe saltar con la música.
+                            let audioKick = groupAudio * config.audioDepth;
+
+                            // Combinamos: Estructura + (Dirección * Kick)
+                            // Usamos Math.sign para que la expansión respete la dirección, pero si es 0 (gris), saltamos positivo.
+                            let direction = (bright - 0.5);
+                            if (Math.abs(direction) < 0.05) direction = 0.5; // Forzar movimiento para los grises
+
+                            let zAudio = direction * -audioKick;
+
+                            // Factor de salto global (para que todo baile un poco)
+                            let globalJump = (bass * config.audioDepth * 0.3);
+
+                            let finalZ = (zStructure + zAudio + globalJump) * config.exaggeration;
+
+                            // EXCLUSIVIDAD DE EFECTOS
+                            // Si no hay audio (silencio), mantenemos una ola suave "idle"
+                            let waveDriver = (groupAudio > 0.01) ? groupAudio : 0.2;
+
+                            if (config.effectMode === 'wave') {
+                                // --- DYNAMIC 360 WAVE ENGINE ---
+                                // 1. Calculate Angle (Rotates with Time + Shifts with Bass)
+                                // We use a pseudo-random drift driven by bass impacts
+                                let waveAngle = (time * 0.2) + (bass * 2.0);
+
+                                // 2. Direction Vector
+                                let dirX = Math.cos(waveAngle);
+                                let dirY = Math.sin(waveAngle);
+
+                                // 3. Frequency (Density) - Treble makes waves tighter
+                                let freq = 0.1 + (treble * 0.2);
+
+                                // 4. Calculate Phase (Dot Product: Position . Direction)
+                                const px = (i % width) - width / 2;
+                                const py = (Math.floor(i / width)) - height / 2;
+                                let phase = (px * dirX) + (py * dirY);
+
+                                // 5. Apply Wave
+                                finalZ += Math.sin(time * 2.0 + phase * freq) * (waveDriver * config.waveInt * 1.5);
+                            } else if (config.effectMode === 'ripple') {
+                                // LÓGICA DE RIPPLES (Gota de agua)
+                                let rippleEffect = 0;
+                                const px = (i % width) - width / 2;
+                                const py = (Math.floor(i / width)) - height / 2;
+
+                                activeRipples.forEach(r => {
+                                    const dx = px - r.x;
+                                    const dy = py - r.y;
+                                    const d = Math.sqrt(dx * dx + dy * dy) * 0.05;
+                                    const age = time - r.startTime;
+                                    if (age > 0 && age < 6) {
+                                        // Onda expansiva desde el punto de impacto r.x, r.y
+                                        const s = Math.sin(d * 4 - age * 15);
+                                        const atten = Math.exp(-d * 0.15) * Math.exp(-age * 0.45);
+                                        rippleEffect += s * atten * config.rippleInt;
+                                    }
+                                });
+                                finalZ += rippleEffect;
+                            }
+
+                            // --- TRANSFORMACIÓN DE COORDENADAS (MORPHING) ---
+                            const ix = (i % width) - width / 2;
+                            const iy = (Math.floor(i / width)) - height / 2;
+
+                            if (config.viewMode === 'cylinder') {
+                                // Proyección Cilíndrica
+                                const radius = 100 + finalZ * 8.0; // Amplificado x4 (Base 2.0 -> 8.0)
+                                const angle = (ix / width) * Math.PI * 2;
+
+                                posArr[i * 3] = Math.sin(angle) * radius;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = Math.cos(angle) * radius;
+                            } else if (config.viewMode === 'sphere') {
+                                // Proyección Esférica
+                                const radius = 120 + finalZ * 8.0; // Amplificado x4
+                                const theta = (ix / width) * Math.PI * 2;
+                                const phi = ((iy / height) + 0.5) * Math.PI;
+
+                                posArr[i * 3] = radius * Math.sin(phi) * Math.sin(theta);
+                                posArr[i * 3 + 1] = radius * -Math.cos(phi);
+                                posArr[i * 3 + 2] = radius * Math.sin(phi) * Math.cos(theta);
+
+                            } else if (config.viewMode === 'spiral') {
+                                // Proyección Espiral / ADN
+                                const radius = 80 + finalZ * 8.0; // Amplificado x4
+                                const angle = (iy / height) * Math.PI * 10 + (time * 0.5);
+
+                                posArr[i * 3] = Math.sin(angle + (ix / width) * 2) * radius;
+                                posArr[i * 3 + 1] = iy * 1.5;
+                                posArr[i * 3 + 2] = Math.cos(angle + (ix / width) * 2) * radius;
+
+                            } else if (config.viewMode === 'vortex') {
+                                // Vórtice: Profundidad infinita en el centro
+                                const angle = Math.atan2(iy, ix) + (time * 0.5);
+                                const dist = Math.sqrt(ix * ix + iy * iy);
+                                const depth = 10000 / (dist + 50); // Singularidad central
+
+                                posArr[i * 3] = Math.cos(angle) * (dist + finalZ * 8.0); // Amplificado
+                                posArr[i * 3 + 1] = Math.sin(angle) * (dist + finalZ * 8.0);
+                                posArr[i * 3 + 2] = -depth + finalZ * 8.0;
+
+                            } else if (config.viewMode === 'torus') {
+                                // Toroide
+                                const R = 150;
+                                const r = 60 + finalZ * 6.0; // Amplificado x4 (1.5 -> 6.0)
+                                const u = (ix / width) * Math.PI * 2;
+                                const v = (iy / height) * Math.PI * 2;
+
+                                posArr[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+                                posArr[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+                                posArr[i * 3 + 2] = r * Math.sin(v);
+
+                            } else if (config.viewMode === 'book') {
+                                // Libro: Doblar plano en dos
+                                const angle = Math.abs(ix / width) * Math.PI;
+                                const fold = (ix < 0) ? -1 : 1;
+                                posArr[i * 3] = Math.sin(angle) * 150 * fold;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = -Math.cos(angle) * 150 + finalZ;
+
+                            } else if (config.viewMode === 'scatter') {
+                                // Explosión: Dispersión basada en índice pseudo-aleatorio
+                                const rnd = Math.sin(i * 12.9898) * 43758.5453;
+                                const exp = bass * 200 * config.gain; // Nivel de explosión por audio
+                                posArr[i * 3] = ix + Math.cos(rnd) * exp;
+                                posArr[i * 3 + 1] = iy + Math.sin(rnd) * exp;
+                                posArr[i * 3 + 2] = finalZ + Math.sin(rnd * 2) * exp;
+
+                            } else if (config.viewMode === 'hourglass') {
+                                // Reloj de Arena: Estrechar el centro Y
+                                const neck = Math.abs(iy / (height / 2)) + 0.1;
+                                posArr[i * 3] = ix * neck * 2;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = finalZ * neck;
+
+                            } else if (config.viewMode === 'kaleido') {
+                                // Caleidoscopio: Reflejo radial séptuple
+                                const angle = Math.atan2(iy, ix);
+                                const dist = Math.sqrt(ix * ix + iy * iy);
+                                const segment = (Math.PI * 2) / 7;
+                                const newAngle = (angle % segment) + time * 0.2;
+
+                                posArr[i * 3] = Math.cos(newAngle) * dist;
+                                posArr[i * 3 + 1] = Math.sin(newAngle) * dist;
+                                posArr[i * 3 + 2] = finalZ;
+
+                            } else {
+                                // Plano Original
+                                posArr[i * 3] = ix;
+                                posArr[i * 3 + 1] = iy;
+                                posArr[i * 3 + 2] = finalZ;
+                            }
+
+                            // 2. COLOR CALCULATIONS (NEON vs REAL)
+                            if (config.colorMode === 'real') {
+                                // MODO REAL: Usar color original de la cámara
+                                let r_real = r / 255;
+                                let g_real = g / 255;
+                                let b_real = b / 255;
+
+                                // --- EFECTOS DE CÁMARA ---
+
+                                // A) FLASH (Golpe de brillo con el bajo)
+                                if (config.fxFlash) {
+                                    const flash = 1.0 + (bass * 0.6); // Hasta 60% más brillante
+                                    r_real *= flash;
+                                    g_real *= flash;
+                                    b_real *= flash;
+                                }
+
+                                // B) GLITCH (Desfase de canales en agudos)
+                                if (config.fxGlitch && i < (width * height) - width * 4) {
+                                    // Usamos bandas agudas (indices 7,8,9)
+                                    const treble = (bands[7] + bands[8] + bands[9]) / 3;
+                                    if (treble > 0.1) {
+                                        const offset = Math.floor(treble * 20); // Desfase dinámico
+                                        // Glitch R (adelante) y B (atrás)
+                                        const idxR = Math.min((width * height) - 1, i + offset);
+                                        const idxB = Math.max(0, i - offset);
+
+                                        r_real = imageData[idxR * 4] / 255;
+                                        // G se queda igual
+                                        b_real = imageData[idxB * 4 + 2] / 255;
+
+                                        // Boost brillo glitch
+                                        r_real *= (1.0 + treble);
+                                    }
+                                }
+
+                                // C) PULSE (Saturación rítmica)
+                                if (config.fxPulse) {
+                                    // Truco barato para saturación:
+                                    // Color = Gris + (Color - Gris) * Saturación
+                                    const gray = (r_real + g_real + b_real) / 3;
+                                    const satBoost = 1.0 + (groupAudio * 2.5); // Saturación extra
+
+                                    r_real = gray + (r_real - gray) * satBoost;
+                                    g_real = gray + (g_real - gray) * satBoost;
+                                    b_real = gray + (b_real - gray) * satBoost;
+                                }
+
+                                // D) RHYTHMIC HUE SHIFT (SPATIAL & CHAOS EDITION)
+                                if (config.fxHueShift) {
+                                    // 1. RGB to HSL
+                                    let max = Math.max(r_real, g_real, b_real);
+                                    let min = Math.min(r_real, g_real, b_real);
+                                    let h, s, l = (max + min) / 2;
+
+                                    if (max === min) {
+                                        h = s = 0; // Achromatic
+                                    } else {
+                                        let d = max - min;
+                                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                                        switch (max) {
+                                            case r_real: h = (g_real - b_real) / d + (g_real < b_real ? 6 : 0); break;
+                                            case g_real: h = (b_real - r_real) / d + 2; break;
+                                            case b_real: h = (r_real - g_real) / d + 4; break;
+                                        }
+                                        h /= 6;
+                                    }
+
+                                    // --- STATE-BASED ACTIVATION ---
+                                    // User wants: Magic ON when Playing (even if quiet). Magic OFF when Stopped/Paused.
+                                    let isMsgPlaying = !audio.paused && audio.duration > 0;
+                                    let magicIntensity = isMsgPlaying ? 1.0 : 0.0;
+
+                                    if (magicIntensity > 0.01) {
+                                        // 2. FORCE COLOR & MAGIC (Applied fully if playing)
+                                        let s_target = s;
+                                        let l_target = l;
+
+                                        // Force vibrant colors on whites/blacks
+                                        if (s < 0.3 || l < 0.15 || l > 0.85) {
+                                            s_target = 1.0;
+                                            l_target = 0.5;
+                                            // Hack for grays
+                                            if (h === 0) h = (i % 100) / 100 + (time * 0.1);
+                                        }
+
+                                        // Apply Force Color (Mix based on magicIntensity)
+                                        s = s + (s_target - s) * magicIntensity;
+                                        l = l + (l_target - l) * magicIntensity;
+
+                                        // 3. TARGET SPATIAL SHIFT
+                                        let spatialFactor = finalZ * 0.1;
+                                        let timeRotation = time * 0.2;
+                                        let beatImpact = bass * 0.5;
+                                        let chaos = Math.sin(i * 132.4) * 0.1;
+
+                                        // Apply Shift (Even if bass is 0, time/spatial keeps it magical)
+                                        let totalShift = (spatialFactor + timeRotation + beatImpact + chaos) * magicIntensity;
+
+                                        h = (h + totalShift) % 1.0;
+                                        if (h < 0) h += 1.0;
+                                    }
+
+                                    // 4. HSL to RGB
+                                    if (s === 0) {
+                                        r_real = g_real = b_real = l;
+                                    } else {
+                                        const hue2rgb = (p, q, t) => {
+                                            if (t < 0) t += 1;
+                                            if (t > 1) t -= 1;
+                                            if (t < 1 / 6) return p + (q - p) * 6 * t;
+                                            if (t < 1 / 2) return q;
+                                            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                                            return p;
+                                        };
+                                        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                                        const p = 2 * l - q;
+                                        r_real = hue2rgb(p, q, h + 1 / 3);
+                                        g_real = hue2rgb(p, q, h);
+                                        b_real = hue2rgb(p, q, h - 1 / 3);
+                                    }
+                                }
+
+                                // Aplicar ganancia final
+                                colArr[i * 3] = r_real * config.gain;
+                                colArr[i * 3 + 1] = g_real * config.gain;
+                                colArr[i * 3 + 2] = b_real * config.gain;
+
+                            } else {
+                                // MODO NEON: Lógica original HSL
+                                let hue = currentBaseHue + (groupAudio * 240) + (groupIdx * 12);
+                                hue = hue % 360;
+
+                                let s = 0.95;
+                                let l = 0.15 + (bright * 0.5) + (groupAudio * 0.2);
+
+                                let c_val = (1 - Math.abs(2 * l - 1)) * s;
+                                let x_val = c_val * (1 - Math.abs((hue / 60) % 2 - 1));
+                                let m_val = l - c_val / 2;
+                                let r_f, g_f, b_f;
+
+                                if (hue < 60) { r_f = c_val; g_f = x_val; b_f = 0; }
+                                else if (hue < 120) { r_f = x_val; g_f = c_val; b_f = 0; }
+                                else if (hue < 180) { r_f = 0; g_f = c_val; b_f = x_val; }
+                                else if (hue < 240) { r_f = 0; g_f = x_val; b_f = c_val; }
+                                else if (hue < 300) { r_f = x_val; g_f = 0; b_f = c_val; }
+                                else { r_f = c_val; g_f = 0; b_f = x_val; }
+
+                                colArr[i * 3] = r_f + m_val;
+                                colArr[i * 3 + 1] = g_f + m_val;
+                                colArr[i * 3 + 2] = b_f + m_val;
+                            }
+                        }
+                        geo.attributes.position.needsUpdate = true;
+                        geo.attributes.color.needsUpdate = true;
+
+                        material.size = config.pointSize + (bass * 0.25);
+
+                        // --- MOTOR DE LLUVIA RÍTMICA RELATIVA ---
+                        smoothedBass += (bass - smoothedBass) * 0.04;
+                        const relativePeak = bass - smoothedBass;
+
+                        if (relativePeak > 0.05 && Date.now() - lastBassHitTime > 120) {
+                            if (config.autoRotate) {
+                                rotVect.x = (Math.random() - 0.5) * 3;
+                                rotVect.y = (Math.random() - 0.5) * 3;
+                                rotVect.z = (Math.random() - 0.5) * 1.5;
+                            }
+
+                            // DISPARAR GOTAS ALEATORIAS (Solo si el modo Lluvia está activo)
+                            if (config.effectMode === 'ripple') {
+                                const numDrops = Math.floor(relativePeak * 40) + 1;
+                                for (let k = 0; k < numDrops; k++) {
+                                    activeRipples.push({
+                                        x: (Math.random() - 0.5) * width * 1.8,
+                                        y: (Math.random() - 0.5) * height * 1.8,
+                                        startTime: time
+                                    });
+                                }
+                                while (activeRipples.length > 60) activeRipples.shift();
+                            }
+                            lastBassHitTime = Date.now();
+                        }
+
+                        if (config.autoRotate) {
+                            rotVect.x += Math.sin(time * 0.1) * 0.005;
+                            rotVect.z += Math.cos(time * 0.1) * 0.005;
+                            const speed = config.rotateSpeed * 0.01;
+                            pointsGroup.rotation.x += rotVect.x * speed;
+                            pointsGroup.rotation.y += rotVect.y * speed;
+                            pointsGroup.rotation.z += rotVect.z * speed;
+                            controls.autoRotate = false;
+                        } else {
+                            controls.autoRotate = false;
+                        }
+
+                        controls.update();
+
+                        // --- RENDER ---
+                        // Si Trail está activo, NO limpiamos, solo dibujamos el plano semi-transparente
+                        if (config.trailData) {
+                            fadePlane.visible = true;
+                        } else {
+                            fadePlane.visible = false;
+                            renderer.clear(); // Limpieza estándar
+                        }
+
+                        renderer.render(scene, camera);
+                    }
+                }
+                animate();
+
+                // Lógica del botón de reinicio
+                const rBtn = document.getElementById('resetBtn');
+                rBtn.style.display = 'block';
+                rBtn.onclick = () => {
+                    camera.position.set(0, 0, 450);
+                    pointsGroup.rotation.set(0, 0, Math.PI); // Reset rotación 3D (manteniendo corrección)
+                    controls.reset();
+                    log("Vista y rotación reiniciadas.");
+                };
+
+                // --- LOGICA DE MODO TEXTO ---
+                const txtInput = document.getElementById('matrixText');
+                const btnUpdateText = document.getElementById('updateTextBtn');
+                const btnToggleText = document.getElementById('toggleTextModeBtn');
+                let isTextMode = false;
+
+                btnUpdateText.onclick = () => {
+                    if (txtInput.value.length === 0) return;
+                    currentText = txtInput.value;
+                    const newData = createTextAtlas(currentText);
+                    textMaterial.uniforms.uTexture.value = newData.tex;
+                    textMaterial.uniforms.uCharCount.value = newData.charCount;
+                    log(`Texto actualizado a: "${currentText}"`);
+                };
+
+                btnToggleText.onclick = () => {
+                    isTextMode = !isTextMode;
+                    if (isTextMode) {
+                        points.material = textMaterial;
+                        btnToggleText.textContent = "DESACTIVAR MODO TEXTO";
+                        btnToggleText.style.color = "#0f0";
+                        log("Modo Texto ACTIVADO");
+                    } else {
+                        points.material = material;
+                        btnToggleText.textContent = "ACTIVAR MODO TEXTO";
+                        btnToggleText.style.color = "#aaa";
+                        log("Modo Texto DESACTIVADO");
+                    }
+                };
+
+            } catch (e) {
+                log("ERROR: " + e.message, true);
+            }
+        }
+        document.getElementById('btn').onclick = () => {
+            log("DEBUG: Click detected on ENCENDER CAMARA button");
+            try {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => log("AudioContext Resumed by User"));
+                }
+                startVisualizer();
+            } catch (e) {
+                log("ERROR clicking start button: " + e.message, true);
+            }
+        };
+
+        // --- SISTEMA DE AUTO-INICIO (Permissions API) ---
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'camera' }).then(res => {
+                if (res.state === 'granted') {
+                    log("Permisos detectados. Iniciando automáticamente...");
+                    startVisualizer();
+                }
+            });
+        }
+    </script>
+
 </body>
 
 </html>
