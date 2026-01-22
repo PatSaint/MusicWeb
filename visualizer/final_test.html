@@ -1382,6 +1382,7 @@
                             }
                         }
                         const bass = bands[0];
+                        const treble = bands[2];
                         const time = Date.now() * 0.002;
 
                         // --- LÓGICA MOOD SWINGER (Cambio de color) ---
@@ -1434,7 +1435,25 @@
                             let waveDriver = (groupAudio > 0.01) ? groupAudio : 0.2;
 
                             if (config.effectMode === 'wave') {
-                                finalZ += Math.sin(time + (i % width) * 0.1) * (waveDriver * config.waveInt);
+                                // --- DYNAMIC 360 WAVE ENGINE ---
+                                // 1. Calculate Angle (Rotates with Time + Shifts with Bass)
+                                // We use a pseudo-random drift driven by bass impacts
+                                let waveAngle = (time * 0.2) + (bass * 2.0);
+
+                                // 2. Direction Vector
+                                let dirX = Math.cos(waveAngle);
+                                let dirY = Math.sin(waveAngle);
+
+                                // 3. Frequency (Density) - Treble makes waves tighter
+                                let freq = 0.1 + (treble * 0.2);
+
+                                // 4. Calculate Phase (Dot Product: Position . Direction)
+                                const px = (i % width) - width / 2;
+                                const py = (Math.floor(i / width)) - height / 2;
+                                let phase = (px * dirX) + (py * dirY);
+
+                                // 5. Apply Wave
+                                finalZ += Math.sin(time * 2.0 + phase * freq) * (waveDriver * config.waveInt * 1.5);
                             } else if (config.effectMode === 'ripple') {
                                 // LÓGICA DE RIPPLES (Gota de agua)
                                 let rippleEffect = 0;
