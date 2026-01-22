@@ -336,6 +336,30 @@
                         <option value="real">Original (Cámara)</option>
                     </select>
                 </div>
+
+                <!-- SUB-OPCIONES PARA MODO REAL -->
+                <div id="real-fx-options"
+                    style="display:none; margin-top:10px; padding-left:10px; border-left: 2px solid #555;">
+                    <label style="font-size:10px; color:#aaa; margin-bottom:5px; display:block;">EFECTOS DE
+                        CÁMARA</label>
+
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxFlash" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">⚡ Bass Flash</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxGlitch" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">👾 Chromatic Glitch</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxPulse" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">💓 Saturation Pulse</span>
+                    </div>
+                    <div class="config-row">
+                        <input type="checkbox" id="cfg-fxHueShift" style="margin-right: 10px;">
+                        <span style="font-size: 11px;">🌈 Rhythmic Hue Shift</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -525,8 +549,8 @@
         VISTA</button>
 
     <script src="three.min.js"></script>
-    <!-- Añadimos OrbitControls para que puedas girar tú mismo con el ratón -->
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Usamos TrackballControls para rotación libre sin bloqueo de ejes -->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
 
     <script>
         const diagDiv = document.getElementById('diag');
@@ -577,7 +601,11 @@
             exaggeration: 2.0,
             trailData: false, // Estela visual
             viewMode: 'plane', // 'plane', 'cylinder'
-            colorMode: 'neon' // 'neon' or 'real'
+            colorMode: 'neon', // 'neon' or 'real'
+            fxFlash: true,
+            fxGlitch: true,
+            fxPulse: true,
+            fxHueShift: false
         };
 
         let config = { ...defaultConfig };
@@ -617,12 +645,22 @@
             setVal('rotateSpeed', config.rotateSpeed);
             setVal('rippleInt', config.rippleInt);
             setVal('exaggeration', config.exaggeration);
-            setVal('exaggeration', config.exaggeration);
             setVal('trailData', config.trailData, true);
+
+            // FX Checkboxes
+            setVal('fxFlash', config.fxFlash, true);
+            setVal('fxGlitch', config.fxGlitch, true);
+            setVal('fxPulse', config.fxPulse, true);
+            setVal('fxHueShift', config.fxHueShift, true);
 
             // UI Color Mode Update
             const colorModeSel = document.getElementById('cam-colorMode');
             if (colorModeSel) colorModeSel.value = config.colorMode || 'neon';
+
+            // Toggle visibility of FX options
+            // Toggle visibility of FX options
+            const fxPanel = document.getElementById('real-fx-options');
+            if (fxPanel) fxPanel.style.display = (config.colorMode === 'real') ? 'block' : 'none';
 
 
             // UI Mode Update
@@ -666,6 +704,12 @@
                 bind('exaggeration', 'exaggeration');
                 bind('trailData', 'trailData', true);
 
+                // New FX Bindings
+                bind('fxFlash', 'fxFlash', true);
+                bind('fxGlitch', 'fxGlitch', true);
+                bind('fxPulse', 'fxPulse', true);
+                bind('fxHueShift', 'fxHueShift', true);
+
 
                 log("Listeners de configuración inicializados correctamente.");
 
@@ -683,6 +727,11 @@
                 if (colorModeSel) {
                     colorModeSel.onchange = (e) => {
                         config.colorMode = e.target.value;
+
+                        // Toggle sub-panel options
+                        const fxPanel = document.getElementById('real-fx-options');
+                        if (fxPanel) fxPanel.style.display = (config.colorMode === 'real') ? 'block' : 'none';
+
                         saveConfig();
                         log("Modo Color: " + config.colorMode);
                     };
@@ -1244,8 +1293,15 @@
                 renderer.autoClear = false;
                 document.body.appendChild(renderer.domElement);
 
-                const controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
+                // REEMPLAZO POR TRACKBALL (Rotación libre)
+                const controls = new THREE.TrackballControls(camera, renderer.domElement);
+                controls.rotateSpeed = 3.0; // Velocidad de rotación
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+                controls.noZoom = false;
+                controls.noPan = false;
+                controls.staticMoving = false; // Inercia
+                controls.dynamicDampingFactor = 0.1; // Suavizado
 
                 const geo = new THREE.BufferGeometry();
                 const positions = new Float32Array(width * height * 3);
@@ -1263,12 +1319,16 @@
                 const material = new THREE.PointsMaterial({
                     size: 0.45,
                     vertexColors: true,
-                    transparent: false
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
                 });
                 const points = new THREE.Points(geo, material);
 
                 const pointsGroup = new THREE.Group();
                 pointsGroup.add(points);
+                pointsGroup.rotation.z = Math.PI; // Fix Upside Down Camera
                 scene.add(pointsGroup);
 
                 // --- CAPA DE FADE PARA TRAIL ---
@@ -1492,9 +1552,131 @@
                             // 2. COLOR CALCULATIONS (NEON vs REAL)
                             if (config.colorMode === 'real') {
                                 // MODO REAL: Usar color original de la cámara
-                                colArr[i * 3] = r / 255 * config.gain;
-                                colArr[i * 3 + 1] = g / 255 * config.gain;
-                                colArr[i * 3 + 2] = b / 255 * config.gain;
+                                let r_real = r / 255;
+                                let g_real = g / 255;
+                                let b_real = b / 255;
+
+                                // --- EFECTOS DE CÁMARA ---
+
+                                // A) FLASH (Golpe de brillo con el bajo)
+                                if (config.fxFlash) {
+                                    const flash = 1.0 + (bass * 0.6); // Hasta 60% más brillante
+                                    r_real *= flash;
+                                    g_real *= flash;
+                                    b_real *= flash;
+                                }
+
+                                // B) GLITCH (Desfase de canales en agudos)
+                                if (config.fxGlitch && i < (width * height) - width * 4) {
+                                    // Usamos bandas agudas (indices 7,8,9)
+                                    const treble = (bands[7] + bands[8] + bands[9]) / 3;
+                                    if (treble > 0.1) {
+                                        const offset = Math.floor(treble * 20); // Desfase dinámico
+                                        // Glitch R (adelante) y B (atrás)
+                                        const idxR = Math.min((width * height) - 1, i + offset);
+                                        const idxB = Math.max(0, i - offset);
+
+                                        r_real = imageData[idxR * 4] / 255;
+                                        // G se queda igual
+                                        b_real = imageData[idxB * 4 + 2] / 255;
+
+                                        // Boost brillo glitch
+                                        r_real *= (1.0 + treble);
+                                    }
+                                }
+
+                                // C) PULSE (Saturación rítmica)
+                                if (config.fxPulse) {
+                                    // Truco barato para saturación:
+                                    // Color = Gris + (Color - Gris) * Saturación
+                                    const gray = (r_real + g_real + b_real) / 3;
+                                    const satBoost = 1.0 + (groupAudio * 2.5); // Saturación extra
+
+                                    r_real = gray + (r_real - gray) * satBoost;
+                                    g_real = gray + (g_real - gray) * satBoost;
+                                    b_real = gray + (b_real - gray) * satBoost;
+                                }
+
+                                // D) RHYTHMIC HUE SHIFT (SPATIAL & CHAOS EDITION)
+                                if (config.fxHueShift) {
+                                    // 1. RGB to HSL
+                                    let max = Math.max(r_real, g_real, b_real);
+                                    let min = Math.min(r_real, g_real, b_real);
+                                    let h, s, l = (max + min) / 2;
+
+                                    if (max === min) {
+                                        h = s = 0; // Achromatic
+                                    } else {
+                                        let d = max - min;
+                                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                                        switch (max) {
+                                            case r_real: h = (g_real - b_real) / d + (g_real < b_real ? 6 : 0); break;
+                                            case g_real: h = (b_real - r_real) / d + 2; break;
+                                            case b_real: h = (r_real - g_real) / d + 4; break;
+                                        }
+                                        h /= 6;
+                                    }
+
+                                    // --- STATE-BASED ACTIVATION ---
+                                    // User wants: Magic ON when Playing (even if quiet). Magic OFF when Stopped/Paused.
+                                    let isMsgPlaying = !audio.paused && audio.duration > 0;
+                                    let magicIntensity = isMsgPlaying ? 1.0 : 0.0;
+
+                                    if (magicIntensity > 0.01) {
+                                        // 2. FORCE COLOR & MAGIC (Applied fully if playing)
+                                        let s_target = s;
+                                        let l_target = l;
+
+                                        // Force vibrant colors on whites/blacks
+                                        if (s < 0.3 || l < 0.15 || l > 0.85) {
+                                            s_target = 1.0;
+                                            l_target = 0.5;
+                                            // Hack for grays
+                                            if (h === 0) h = (i % 100) / 100 + (time * 0.1);
+                                        }
+
+                                        // Apply Force Color (Mix based on magicIntensity)
+                                        s = s + (s_target - s) * magicIntensity;
+                                        l = l + (l_target - l) * magicIntensity;
+
+                                        // 3. TARGET SPATIAL SHIFT
+                                        let spatialFactor = finalZ * 0.1;
+                                        let timeRotation = time * 0.2;
+                                        let beatImpact = bass * 0.5;
+                                        let chaos = Math.sin(i * 132.4) * 0.1;
+
+                                        // Apply Shift (Even if bass is 0, time/spatial keeps it magical)
+                                        let totalShift = (spatialFactor + timeRotation + beatImpact + chaos) * magicIntensity;
+
+                                        h = (h + totalShift) % 1.0;
+                                        if (h < 0) h += 1.0;
+                                    }
+
+                                    // 4. HSL to RGB
+                                    if (s === 0) {
+                                        r_real = g_real = b_real = l;
+                                    } else {
+                                        const hue2rgb = (p, q, t) => {
+                                            if (t < 0) t += 1;
+                                            if (t > 1) t -= 1;
+                                            if (t < 1 / 6) return p + (q - p) * 6 * t;
+                                            if (t < 1 / 2) return q;
+                                            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                                            return p;
+                                        };
+                                        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                                        const p = 2 * l - q;
+                                        r_real = hue2rgb(p, q, h + 1 / 3);
+                                        g_real = hue2rgb(p, q, h);
+                                        b_real = hue2rgb(p, q, h - 1 / 3);
+                                    }
+                                }
+
+                                // Aplicar ganancia final
+                                colArr[i * 3] = r_real * config.gain;
+                                colArr[i * 3 + 1] = g_real * config.gain;
+                                colArr[i * 3 + 2] = b_real * config.gain;
+
                             } else {
                                 // MODO NEON: Lógica original HSL
                                 let hue = currentBaseHue + (groupAudio * 240) + (groupIdx * 12);
@@ -1584,7 +1766,7 @@
                 rBtn.style.display = 'block';
                 rBtn.onclick = () => {
                     camera.position.set(0, 0, 450);
-                    pointsGroup.rotation.set(0, 0, 0); // Reset rotación 3D del objeto
+                    pointsGroup.rotation.set(0, 0, Math.PI); // Reset rotación 3D (manteniendo corrección)
                     controls.reset();
                     log("Vista y rotación reiniciadas.");
                 };
