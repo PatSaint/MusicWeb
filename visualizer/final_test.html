@@ -576,7 +576,8 @@
             viewMode: 'plane', // 'plane', 'cylinder'
             exaggeration: 2.0,
             trailData: false, // Estela visual
-            viewMode: 'plane' // 'plane', 'cylinder'
+            viewMode: 'plane', // 'plane', 'cylinder'
+            colorMode: 'neon' // 'neon' or 'real'
         };
 
         let config = { ...defaultConfig };
@@ -616,7 +617,12 @@
             setVal('rotateSpeed', config.rotateSpeed);
             setVal('rippleInt', config.rippleInt);
             setVal('exaggeration', config.exaggeration);
+            setVal('exaggeration', config.exaggeration);
             setVal('trailData', config.trailData, true);
+
+            // UI Color Mode Update
+            const colorModeSel = document.getElementById('cam-colorMode');
+            if (colorModeSel) colorModeSel.value = config.colorMode || 'neon';
 
 
             // UI Mode Update
@@ -669,6 +675,16 @@
                         config.viewMode = e.target.value;
                         saveConfig();
                         log("Vista cambiada a: " + config.viewMode);
+                    };
+                }
+
+                // NUEVO LISTENER: Modo de Color
+                const colorModeSel = document.getElementById('cam-colorMode');
+                if (colorModeSel) {
+                    colorModeSel.onchange = (e) => {
+                        config.colorMode = e.target.value;
+                        saveConfig();
+                        log("Modo Color: " + config.colorMode);
                     };
                 }
 
@@ -1473,28 +1489,36 @@
                                 posArr[i * 3 + 2] = finalZ;
                             }
 
-                            // 2. COLOR POR GRUPOS
-                            let hue = currentBaseHue + (groupAudio * 240) + (groupIdx * 12);
-                            hue = hue % 360;
+                            // 2. COLOR CALCULATIONS (NEON vs REAL)
+                            if (config.colorMode === 'real') {
+                                // MODO REAL: Usar color original de la cámara
+                                colArr[i * 3] = r / 255 * config.gain;
+                                colArr[i * 3 + 1] = g / 255 * config.gain;
+                                colArr[i * 3 + 2] = b / 255 * config.gain;
+                            } else {
+                                // MODO NEON: Lógica original HSL
+                                let hue = currentBaseHue + (groupAudio * 240) + (groupIdx * 12);
+                                hue = hue % 360;
 
-                            let s = 0.95;
-                            let l = 0.15 + (bright * 0.5) + (groupAudio * 0.2);
+                                let s = 0.95;
+                                let l = 0.15 + (bright * 0.5) + (groupAudio * 0.2);
 
-                            let c_val = (1 - Math.abs(2 * l - 1)) * s;
-                            let x_val = c_val * (1 - Math.abs((hue / 60) % 2 - 1));
-                            let m_val = l - c_val / 2;
-                            let r_f, g_f, b_f;
+                                let c_val = (1 - Math.abs(2 * l - 1)) * s;
+                                let x_val = c_val * (1 - Math.abs((hue / 60) % 2 - 1));
+                                let m_val = l - c_val / 2;
+                                let r_f, g_f, b_f;
 
-                            if (hue < 60) { r_f = c_val; g_f = x_val; b_f = 0; }
-                            else if (hue < 120) { r_f = x_val; g_f = c_val; b_f = 0; }
-                            else if (hue < 180) { r_f = 0; g_f = c_val; b_f = x_val; }
-                            else if (hue < 240) { r_f = 0; g_f = x_val; b_f = c_val; }
-                            else if (hue < 300) { r_f = x_val; g_f = 0; b_f = c_val; }
-                            else { r_f = c_val; g_f = 0; b_f = x_val; }
+                                if (hue < 60) { r_f = c_val; g_f = x_val; b_f = 0; }
+                                else if (hue < 120) { r_f = x_val; g_f = c_val; b_f = 0; }
+                                else if (hue < 180) { r_f = 0; g_f = c_val; b_f = x_val; }
+                                else if (hue < 240) { r_f = 0; g_f = x_val; b_f = c_val; }
+                                else if (hue < 300) { r_f = x_val; g_f = 0; b_f = c_val; }
+                                else { r_f = c_val; g_f = 0; b_f = x_val; }
 
-                            colArr[i * 3] = r_f + m_val;
-                            colArr[i * 3 + 1] = g_f + m_val;
-                            colArr[i * 3 + 2] = b_f + m_val;
+                                colArr[i * 3] = r_f + m_val;
+                                colArr[i * 3 + 1] = g_f + m_val;
+                                colArr[i * 3 + 2] = b_f + m_val;
+                            }
                         }
                         geo.attributes.position.needsUpdate = true;
                         geo.attributes.color.needsUpdate = true;
