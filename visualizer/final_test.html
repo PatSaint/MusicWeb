@@ -319,6 +319,26 @@
             <button class="ctrl-btn mode-btn" id="shuffleBtn" title="Aleatorio">🔀</button>
         </div>
 
+        <!-- SECCION CÁMARA (NUEVA) -->
+        <div id="camera-section"
+            style="border-top: 1px solid #0f0; background: #001100; padding: 15px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="toggleCameraSec()">
+                <span>📷 CÁMARA & COLOR</span>
+                <span id="camera-caret">▼</span>
+            </h4>
+            <div id="camera-controls" style="display: none;">
+                <div class="config-group">
+                    <label>Modo de Color</label>
+                    <select id="cam-colorMode"
+                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
+                        <option value="neon">Neón (Reactivo)</option>
+                        <option value="real">Original (Cámara)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- ESTUDIO DE GRABACIÓN -->
         <div id="recording-studio"
             style="border-top: 1px solid #0f0; background: #002200; padding: 15px; margin-bottom: 20px;">
@@ -704,6 +724,18 @@
 
         // --- LÓGICA DE GRABACIÓN DE VIDEO ---
         // --- ESTUDIO DE GRABACIÓN & LÓGICA ---
+        function toggleCameraSec() {
+            const el = document.getElementById('camera-controls');
+            const caret = document.getElementById('camera-caret');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                caret.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                caret.textContent = '▼';
+            }
+        }
+
         function toggleStudio() {
             const el = document.getElementById('studio-controls');
             const caret = document.getElementById('studio-caret');
