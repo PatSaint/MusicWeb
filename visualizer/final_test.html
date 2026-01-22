@@ -416,6 +416,33 @@
             </div>
         </div>
 
+        <!-- PANEL MODO TEXTO (Neon Style) -->
+        <div id="text-mode-panel"
+            style="margin-top: 10px; border: 1px solid #333; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px;">
+            <h4 style="margin: 0 0 8px 0; color: #aaa; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; justify-content: space-between;"
+                onclick="document.getElementById('text-content').style.display = document.getElementById('text-content').style.display=='none'?'block':'none'">
+                <span>🅰 Text Mode</span>
+                <span style="font-size: 8px;">▼</span>
+            </h4>
+            <div id="text-content" style="display: block;">
+                <div class="config-row" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="matrixText" value="PatSaint"
+                        style="flex: 1; background: #111; color: #0f0; border: 1px solid #333; padding: 3px; font-size: 10px; font-family: monospace; border-radius: 2px;"
+                        placeholder="Type...">
+                    <button id="updateTextBtn"
+                        style="width: 30px; background: #222; color: #fff; border: 1px solid #444; font-size: 9px; cursor: pointer; border-radius: 2px;">
+                        OK
+                    </button>
+                </div>
+                <div class="config-row">
+                    <button id="toggleTextModeBtn"
+                        style="width: 100%; background: #1a1a1a; color: #666; border: 1px solid #333; padding: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s; border-radius: 2px;">
+                        ENABLE TEXT
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- PANEL DE CONFIGURACIÓN ORIGINAL -->
         <div id="config-panel">
             <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 12px; border-bottom: 1px solid #222; padding-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between;"
@@ -1306,15 +1333,90 @@
                 const geo = new THREE.BufferGeometry();
                 const positions = new Float32Array(width * height * 3);
                 const colors = new Float32Array(width * height * 3);
+                // ATRIBUTO PARA TEXTO: Índice de caracter (0, 1, 2...)
+                const charIndices = new Float32Array(width * height);
 
                 for (let i = 0; i < width * height; i++) {
                     positions[i * 3] = ((i % width) - width / 2) * 0.25;
                     positions[i * 3 + 1] = (-(Math.floor(i / width)) + height / 2) * 0.25;
                     positions[i * 3 + 2] = 0;
                     colors[i * 3 + 1] = 1;
+                    charIndices[i] = i; // Cada punto sabe su índice único
                 }
                 geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                 geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geo.setAttribute('charIndex', new THREE.BufferAttribute(charIndices, 1));
+
+                // --- TEXT PARTICLE SYSTEM ENGINE ---
+                const createTextAtlas = (text) => {
+                    const canvas = document.createElement('canvas');
+                    const size = 64; // Dimensión de cada letra
+                    canvas.width = size * text.length;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+
+                    // Fondo transparente
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.font = 'bold 50px monospace'; // Monospace para asegurar espaciado
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    for (let k = 0; k < text.length; k++) {
+                        ctx.fillText(text[k], (k * size) + (size / 2), size / 2);
+                    }
+
+                    const tex = new THREE.CanvasTexture(canvas);
+                    tex.magFilter = THREE.NearestFilter;
+                    tex.minFilter = THREE.NearestFilter;
+                    return { tex, charCount: text.length };
+                };
+
+                let currentText = "PatSaint";
+                let textData = createTextAtlas(currentText);
+
+                const textMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTexture: { value: textData.tex },
+                        uCharCount: { value: textData.charCount },
+                        pointSize: { value: 15.0 } // Reduced from 20 to 15 to reduce overlap
+                    },
+                    vertexShader: `
+                        uniform float pointSize;
+                        attribute float charIndex;
+                        varying float vCharIndex;
+                        varying vec3 vColor;
+                        void main() {
+                            vCharIndex = charIndex;
+                            vColor = color; 
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            gl_PointSize = pointSize * (400.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform sampler2D uTexture;
+                        uniform float uCharCount;
+                        varying float vCharIndex;
+                        varying vec3 vColor;
+                        void main() {
+                            float letterIdx = mod(vCharIndex, uCharCount);
+                            vec2 uv = gl_PointCoord;
+                            float u = (uv.x / uCharCount) + (letterIdx / uCharCount);
+                            // Invertimos Y para coincidir con Canvas
+                            vec4 texColor = texture2D(uTexture, vec2(u, 1.0 - uv.y)); 
+                            
+                            if (texColor.a < 0.5) discard; 
+                            // Aggressive reduction: 0.25 intensity to fix whiteout
+                            gl_FragColor = vec4(vColor * 0.25, 1.0) * texColor;
+                        }
+                    `,
+                    transparent: true,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                    vertexColors: true // CRITICAL FIX: Enable color attribute
+                });
 
                 const material = new THREE.PointsMaterial({
                     size: 0.45,
@@ -1788,6 +1890,36 @@
                     pointsGroup.rotation.set(0, 0, Math.PI); // Reset rotación 3D (manteniendo corrección)
                     controls.reset();
                     log("Vista y rotación reiniciadas.");
+                };
+
+                // --- LOGICA DE MODO TEXTO ---
+                const txtInput = document.getElementById('matrixText');
+                const btnUpdateText = document.getElementById('updateTextBtn');
+                const btnToggleText = document.getElementById('toggleTextModeBtn');
+                let isTextMode = false;
+
+                btnUpdateText.onclick = () => {
+                    if (txtInput.value.length === 0) return;
+                    currentText = txtInput.value;
+                    const newData = createTextAtlas(currentText);
+                    textMaterial.uniforms.uTexture.value = newData.tex;
+                    textMaterial.uniforms.uCharCount.value = newData.charCount;
+                    log(`Texto actualizado a: "${currentText}"`);
+                };
+
+                btnToggleText.onclick = () => {
+                    isTextMode = !isTextMode;
+                    if (isTextMode) {
+                        points.material = textMaterial;
+                        btnToggleText.textContent = "DESACTIVAR MODO TEXTO";
+                        btnToggleText.style.color = "#0f0";
+                        log("Modo Texto ACTIVADO");
+                    } else {
+                        points.material = material;
+                        btnToggleText.textContent = "ACTIVAR MODO TEXTO";
+                        btnToggleText.style.color = "#aaa";
+                        log("Modo Texto DESACTIVADO");
+                    }
                 };
 
             } catch (e) {
