@@ -65,225 +65,151 @@
             font-weight: bold;
         }
 
-        /* ESTILOS PLAYLIST FASE 2 */
-        #playlist-panel {
+        /* REFACTORIZACIÓN LAYOUT: 5 CAJONES INDEPENDIENTES */
+        #main-sidebar-container {
             position: fixed;
             top: 0;
             right: 0;
-            width: 300px;
             height: 100vh;
-            background: rgba(0, 10, 0, 0.9);
-            border-left: 1px solid #0f0;
             display: flex;
             flex-direction: column;
+            align-items: flex-end;
+            /* Alineado a la derecha */
+            pointer-events: none;
+            /* Dejar pasar clicks al fondo */
             z-index: 500;
-            transition: transform 0.3s;
+            overflow-y: auto;
+            /* Scroll general si hace falta */
+            padding-bottom: 20px;
+
+            /* FIX: Espacio para que los tabs (-30px) no se corten */
+            padding-left: 40px;
+            box-sizing: border-box;
+            width: 350px;
+            /* Asegurar ancho suficiente */
+        }
+
+        .drawer-item {
+            position: relative;
+            background: rgba(0, 10, 0, 0.95);
+            border: 1px solid #0f0;
+            border-right: none;
+            width: 300px;
+            /* Ancho fijo */
+            margin-bottom: 0px;
+            /* SIN MARGEN para apilar pegar */
+            pointer-events: auto;
+            /* Reactivar clicks dentro */
+
+            /* Animación suave de posición y altura */
+            transition: transform 0.3s ease, height 0.3s ease, max-height 0.3s ease;
+            transform: translateX(0);
+            /* Abierto */
+
+            /* Estado ABIERTO */
+            height: auto;
+            max-height: 80vh;
+            overflow: visible;
+            /* IMPORTANTE: Para ver el tab que está fuera */
+
+            /* Sombra para que destaque sobre el fondo */
+            box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .drawer-item.drawer-hidden {
+            transform: translateX(300px);
+            /* Oculto a la derecha */
+
+            /* Estado CERRADO: Altura exacta del TAB para que se peguen */
+            height: 100px !important;
+            max-height: 100px !important;
+            margin-bottom: 0 !important;
+            overflow: visible;
+        }
+
+        .drawer-tab {
+            position: absolute;
+            left: -30px;
+            /* Pegado a la izquierda del cajón */
+            top: 0;
+            /* Sin espacio superior */
+            width: 30px;
+            height: 100px;
+            /* Altura fija para consistencia */
+            background: #003300;
+            border: 1px solid #0f0;
+            border-right: none;
+            border-radius: 5px 0 0 5px;
+            color: #0f0;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            /* Apilar texto y flecha */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-weight: bold;
+            z-index: 501;
+            box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.5);
+            padding: 0;
+            gap: 5px;
+            box-sizing: border-box;
+        }
+
+        .tab-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+
+        .tab-arrow {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Ajustes específicos para Playlist (que necesita scroll interno) */
+        #drawer-playlist .drawer-content {
+            max-height: 40vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         #playlist-header {
-            padding: 20px;
-            border-bottom: 1px solid #0f0;
+            padding: 10px;
+            border-bottom: 1px solid #222;
             text-align: center;
         }
 
-        #track-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .drawer-content {
+            padding: 5px;
         }
 
+        /* Reutilizamos estilos previos */
         #track-list li {
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
-            cursor: pointer;
-            font-size: 13px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            border-bottom: 1px solid #222;
         }
 
-        #track-list li:hover {
-            background: rgba(0, 255, 0, 0.1);
-        }
-
-        #track-list li.active {
-            background: rgba(0, 255, 0, 0.3);
-            color: #fff;
-            font-weight: bold;
-        }
-
-        #controls {
-            padding: 20px;
-            background: rgba(0, 20, 0, 1);
-            border-top: 1px solid #0f0;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .ctrl-btn {
-            background: none;
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            min-width: 40px;
-            border-radius: 4px;
-        }
-
-        .ctrl-btn:hover {
-            background: #222;
-            color: #0f0;
-            border-color: #0f0;
-        }
-
-        .mode-btn.active {
-            color: #0f0;
-            border-color: #0f0;
-            box-shadow: inset 0 0 5px #0f0;
-        }
-
-        /* --- CONFIG PANEL --- */
-        #config-panel {
-            padding: 15px;
-            background: #080808;
-            border-top: 1px solid #0f0;
+        /* Ajuste config panel altura */
+        #config-content {
+            max-height: 50vh;
             overflow-y: auto;
-            max-height: 400px;
         }
 
-        .config-group {
-            margin-bottom: 15px;
-        }
-
-        .config-group label {
-            display: block;
-            font-size: 10px;
-            color: #888;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .config-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        input[type=range] {
-            flex: 1;
-            height: 4px;
-            background: #222;
-            outline: none;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #0f0;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-
-        .val-display {
-            font-size: 11px;
-            color: #0f0;
-            min-width: 30px;
-            text-align: right;
-            font-family: monospace;
-        }
-
-        #folder-btn {
-            background: rgba(0, 255, 0, 0.2);
-            color: #0f0;
-            border: 1px solid #0f0;
-            padding: 5px 15px;
+        /* CORRECCIÓN BOTONES GIGANTES EN CAJONES */
+        .drawer-content button {
+            padding: 8px 12px !important;
+            /* Override global 20px 40px */
+            font-size: 11px !important;
+            /* Override global 24px */
             width: auto;
-            margin-bottom: 10px;
-            font-size: 11px;
-            font-weight: normal;
-            cursor: pointer;
-            border-radius: 20px;
-            /* Más orgánico */
-            transition: all 0.3s ease;
-            display: inline-block;
         }
 
-        #folder-btn:hover {
-            background: rgba(0, 255, 0, 0.5);
-            box-shadow: 0 0 10px #0f0;
-        }
-
-        .rec-btn {
-            background: #ff4444;
-            color: white;
-            animation: pulse-red 2s infinite;
-        }
-
-        .rec-btn.recording {
-            background: white;
-            color: red;
-            border: 2px solid red;
-            animation: none;
-        }
-
-        @keyframes pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
-            }
-        }
-
-        .rec-btn {
-            background: #ff4444;
-            color: white;
-            animation: pulse-red 2s infinite;
-        }
-
-        .rec-btn.recording {
-            background: white;
-            color: red;
-            border: 2px solid red;
-            animation: none;
-        }
-
-        @keyframes pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
-            }
-        }
-
-        .char-input {
-            width: 100%;
-            padding: 8px;
-            background: #222;
-            color: #0f0;
-            border: 1px solid #444;
-            border-radius: 4px;
-            margin-top: 5px;
-            font-family: monospace;
+        .drawer-content .ctrl-btn {
+            padding: 8px !important;
+            font-size: 12px !important;
         }
     </style>
 </head>
@@ -300,276 +226,193 @@
         <div>[INFO] Esperando inicio...</div>
     </div>
 
-    <!-- PANEL DE PLAYLIST -->
-    <div id="playlist-panel">
-        <div id="playlist-header">
-            <h3>MUSIC PLAYLIST</h3>
-            <button id="folder-btn">SELECCIONAR CARPETA</button>
-            <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
-        </div>
-        <ul id="track-list">
-            <li style="color: #666; text-align: center; padding: 20px;">Sin canciones cargadas</li>
-        </ul>
-        <div id="controls">
-            <button class="ctrl-btn" id="prevBtn" title="Anterior">⏮</button>
-            <button class="ctrl-btn" id="playPauseBtn" title="Play/Pause">►</button>
-            <button class="ctrl-btn" id="stopBtn" title="Stop">■</button>
-            <button class="ctrl-btn" id="nextBtn" title="Siguiente">⏭</button>
-            <button class="ctrl-btn mode-btn" id="repeatBtn" title="Repetir">🔄</button>
-            <button class="ctrl-btn mode-btn" id="shuffleBtn" title="Aleatorio">🔀</button>
-        </div>
+    <!-- CONTENEDOR PRINCIPAL DE CAJONES -->
+    <div id="main-sidebar-container">
 
-        <!-- SECCION CÁMARA (NUEVA) -->
-        <div id="camera-section"
-            style="border-top: 1px solid #0f0; background: #001100; padding: 15px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
-                onclick="toggleCameraSec()">
-                <span>📷 CÁMARA & COLOR</span>
-                <span id="camera-caret">▼</span>
-            </h4>
-            <div id="camera-controls" style="display: none;">
-                <div class="config-group">
-                    <label>Modo de Color</label>
-                    <select id="cam-colorMode"
-                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
-                        <option value="neon">Neón (Reactivo)</option>
-                        <option value="real">Original (Cámara)</option>
-                    </select>
+        <!-- 1. PLAYLIST DRAWER -->
+        <div class="drawer-item drawer-hidden" id="drawer-playlist">
+            <div class="drawer-tab" onclick="toggleDrawer('drawer-playlist')">
+                <span class="tab-label">LISTA</span>
+                <span class="tab-arrow">◀</span>
+            </div>
+            <div class="drawer-content">
+                <div id="playlist-header">
+                    <h3 style="margin:5px 0">PLAYLIST</h3>
+                    <button id="folder-btn">CARPETA</button>
+                    <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
                 </div>
-
-                <!-- SUB-OPCIONES PARA MODO REAL -->
-                <div id="real-fx-options"
-                    style="display:none; margin-top:10px; padding-left:10px; border-left: 2px solid #555;">
-                    <label style="font-size:10px; color:#aaa; margin-bottom:5px; display:block;">EFECTOS DE
-                        CÁMARA</label>
-
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-fxFlash" style="margin-right: 10px;">
-                        <span style="font-size: 11px;">⚡ Bass Flash</span>
-                    </div>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-fxGlitch" style="margin-right: 10px;">
-                        <span style="font-size: 11px;">👾 Chromatic Glitch</span>
-                    </div>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-fxPulse" style="margin-right: 10px;">
-                        <span style="font-size: 11px;">💓 Saturation Pulse</span>
-                    </div>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-fxHueShift" style="margin-right: 10px;">
-                        <span style="font-size: 11px;">🌈 Rhythmic Hue Shift</span>
-                    </div>
+                <ul id="track-list" style="min-height:100px; border:1px solid #222; margin:5px 0;">
+                    <li style="color:#666; text-align:center; padding:10px;">Vacío</li>
+                </ul>
+                <div id="controls"
+                    style="padding:10px; background:none; border:none; display:flex; justify-content:center; gap:5px;">
+                    <button class="ctrl-btn" id="prevBtn">⏮</button>
+                    <button class="ctrl-btn" id="playPauseBtn">►</button>
+                    <button class="ctrl-btn" id="stopBtn">■</button>
+                    <button class="ctrl-btn" id="nextBtn">⏭</button>
+                    <button class="ctrl-btn mode-btn" id="repeatBtn">🔄</button>
+                    <button class="ctrl-btn mode-btn" id="shuffleBtn">🔀</button>
                 </div>
             </div>
         </div>
 
-        <!-- ESTUDIO DE GRABACIÓN -->
-        <div id="recording-studio"
-            style="border-top: 1px solid #0f0; background: #002200; padding: 15px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 10px 0; cursor: pointer; display: flex; justify-content: space-between;"
-                onclick="toggleStudio()">
-                <span>🔴 ESTUDIO DE GRABACIÓN</span>
-                <span id="studio-caret">▼</span>
-            </h4>
-            <div id="studio-controls" style="display: none;">
-
-                <!-- Configuración -->
-                <div class="config-group">
-                    <label>Resolución de Video</label>
-                    <select id="rec-resolution"
-                        style="width: 100%; background: #111; color: #0f0; border: 1px solid #444; padding: 5px;">
-                        <option value="original">Original (Ventana)</option>
-                        <option value="tiktok">TikTok / Shorts (9:16)</option>
-                        <option value="landscape">HD Horizontal (16:9)</option>
-                        <option value="square">Instagram (1:1)</option>
-                    </select>
-                </div>
-
-                <div class="config-group">
-                    <label>Audio</label>
-                    <div class="config-row">
-                        <input type="checkbox" id="rec-audio" checked style="margin-right: 10px;">
-                        <span style="font-size: 11px; color: #aaa;">Incluir Audio del Sistema</span>
-                    </div>
-                </div>
-
-                <!-- Acciones -->
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-
-                    <button class="ctrl-btn" id="btn-rec-track" style="border-color: #ffaa00; color: #ffaa00;">
-                        🎤 GRABAR CANCIÓN ACTUAL
-                    </button>
-
-                    <button class="ctrl-btn" id="btn-rec-playlist" style="border-color: #ff55ff; color: #ff55ff;">
-                        📀 GRABAR PLAYLIST COMPLETA
-                    </button>
-
-                    <button class="ctrl-btn rec-btn" id="recordBtnManual">
-                        🔴 REC MANUAL (Start/Stop)
-                    </button>
-
-                </div>
-                <div id="rec-status"
-                    style="font-size: 10px; color: #ff4444; margin-top: 10px; text-align: center; display:none;">
-                    GRABANDO PROGRESIVA...
-                </div>
+        <!-- 2. CAMERA DRAWER -->
+        <div class="drawer-item drawer-hidden" id="drawer-camera">
+            <div class="drawer-tab" onclick="toggleDrawer('drawer-camera')">
+                <span class="tab-label">CÁMARA</span>
+                <span class="tab-arrow">◀</span>
             </div>
-        </div>
-
-        <!-- PANEL MODO TEXTO (Neon Style) -->
-        <div id="text-mode-panel"
-            style="margin-top: 10px; border: 1px solid #333; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px;">
-            <h4 style="margin: 0 0 8px 0; color: #aaa; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; justify-content: space-between;"
-                onclick="document.getElementById('text-content').style.display = document.getElementById('text-content').style.display=='none'?'block':'none'">
-                <span>🅰 Text Mode</span>
-                <span style="font-size: 8px;">▼</span>
-            </h4>
-            <div id="text-content" style="display: block;">
-                <div class="config-row" style="display: flex; gap: 5px; margin-bottom: 5px;">
-                    <input type="text" id="matrixText" value="PatSaint"
-                        style="flex: 1; background: #111; color: #0f0; border: 1px solid #333; padding: 3px; font-size: 10px; font-family: monospace; border-radius: 2px;"
-                        placeholder="Type...">
-                    <button id="updateTextBtn"
-                        style="width: 30px; background: #222; color: #fff; border: 1px solid #444; font-size: 9px; cursor: pointer; border-radius: 2px;">
-                        OK
-                    </button>
-                </div>
-                <div class="config-row">
-                    <button id="toggleTextModeBtn"
-                        style="width: 100%; background: #1a1a1a; color: #666; border: 1px solid #333; padding: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s; border-radius: 2px;">
-                        ENABLE TEXT
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- PANEL DE CONFIGURACIÓN ORIGINAL -->
-        <div id="config-panel">
-            <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 12px; border-bottom: 1px solid #222; padding-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between;"
-                onclick="toggleConfig()">
-                <span>⚙ CONFIGURACIÓN</span>
-                <span id="config-caret">▲</span>
-            </h4>
-            <div id="config-content" style="display: block;">
-
-                <div class="config-group">
-                    <label>Profundidad Base Z</label>
-                    <div class="config-row">
-                        <input type="range" id="cfg-baseDepth" min="1" max="50" value="9">
-                        <span class="val-display" id="val-baseDepth">9</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Reactividad Audio (Z)</label>
-                    <div class="config-row">
-                        <input type="range" id="cfg-audioDepth" min="0" max="50" value="9">
-                        <span class="val-display" id="val-audioDepth">9</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Tamaño de Puntos</label>
-                    <div class="config-row">
-                        <input type="range" id="cfg-pointSize" min="0.1" max="2.0" step="0.05" value="0.45">
-                        <span class="val-display" id="val-pointSize">0.45</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Intensidad de Ondas</label>
-                    <div class="config-row">
-                        <label style="font-size: 12px; margin-right: 10px;"><input type="radio" name="effectMode"
-                                value="wave" checked> Olas Clásicas</label>
-                        <label style="font-size: 12px;"><input type="radio" name="effectMode" value="ripple"> Lluvia /
-                            Ripples</label>
-                    </div>
-
-                    <div class="config-row" id="panel-wave">
-                        <label style="font-size: 11px;">Intensidad Olas</label>
-                        <input type="range" id="cfg-waveInt" min="0" max="10" step="0.1" value="1.5">
-                        <span class="val-display" id="val-waveInt">1.5</span>
-                    </div>
-
-                    <div class="config-row" id="panel-ripple" style="display:none;">
-                        <label style="font-size: 11px;">Intensidad Lluvia</label>
-                        <input type="range" id="cfg-rippleInt" min="0" max="10" step="0.5" value="3.0">
-                        <span class="val-display" id="val-rippleInt">3.0</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Brillo / Ganancia</label>
-                    <div class="config-row">
-                        <input type="range" id="cfg-gain" min="0.5" max="5.0" step="0.1" value="1.5">
-                        <span class="val-display" id="val-gain">1.5</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Exageración Z (Volumen 3D)</label>
-                    <div class="config-row">
-                        <input type="range" id="cfg-exaggeration" min="1.0" max="10.0" step="0.5" value="2.0">
-                        <span class="val-display" id="val-exaggeration">2.0</span>
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Geometría de Proyección</label>
-                    <div class="config-row">
-                        <select id="cfg-viewMode"
-                            style="width: 100%; background: #222; color: #0f0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
-                            <option value="plane">1. Plano Original</option>
-                            <option value="cylinder">2. Cilindro / Túnel</option>
-                            <option value="sphere">3. Esfera / Planeta</option>
-                            <option value="spiral">4. Espiral / ADN</option>
-                            <option value="vortex">5. Vórtice / Agujero Negro</option>
-                            <option value="torus">6. Toroide / Donut</option>
-                            <option value="book">7. Libro / Esquina</option>
-                            <option value="scatter">8. Explosión / Big Bang</option>
-                            <option value="hourglass">9. Reloj de Arena</option>
-                            <option value="kaleido">10. Caleidoscopio</option>
+            <div class="drawer-content" style="padding: 10px;">
+                <h4 style="margin:0 0 10px 0; color:#0f0;">📷 CÁMARA</h4>
+                <div id="camera-controls">
+                    <div class="config-group">
+                        <label>Modo Color</label>
+                        <select id="cam-colorMode"
+                            style="width:100%; background:#111; color:#0f0; border:1px solid #333;">
+                            <option value="neon">Neón</option>
+                            <option value="real">Real</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="config-group">
-                    <label>Cambio de Color Auto</label>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-autoMood" checked style="margin-right: 10px;">
-                        <span style="font-size: 10px; color: #666;">Mood Swinger activado</span>
+                    <div id="real-fx-options" style="display:none; margin-top:5px;">
+                        <div class="config-row"><input type="checkbox" id="cfg-fxFlash"> <span>Flash</span></div>
+                        <div class="config-row"><input type="checkbox" id="cfg-fxGlitch"> <span>Glitch</span></div>
+                        <div class="config-row"><input type="checkbox" id="cfg-fxPulse"> <span>Pulse</span></div>
+                        <div class="config-row"><input type="checkbox" id="cfg-fxHueShift"> <span>Hue</span></div>
                     </div>
                 </div>
-
-                <!-- CONTROLES FASE 4: TRAIL -->
-                <div class="config-group" style="display:none;">
-                    <label>Efecto Estela (Trail)</label>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-trailData" style="margin-right: 10px;">
-                        <span style="font-size: 10px; color: #666;">Activar Estelas Fantasma</span>
-                    </div>
-                </div>
-
-
-
-
-                <div class="config-group">
-                    <label>Auto Rotación</label>
-                    <div class="config-row">
-                        <input type="checkbox" id="cfg-autoRotate" checked style="margin-right: 10px;">
-                        <input type="range" id="cfg-rotateSpeed" min="0" max="10" step="0.5" value="2.0">
-                        <span class="val-display" id="val-rotateSpeed">2.0</span>
-                    </div>
-                </div>
-
-
-                <button class="ctrl-btn" id="randomHueBtn" style="width: 100%; margin-top: 10px;">CAMBIAR COLOR
-                    AHORA</button>
-                <button class="ctrl-btn" id="resetDefaultsBtn"
-                    style="width: 100%; margin-top: 10px; border-color: #f44; color: #f44;">RESTAURAR VALORES</button>
-            </div> <!-- End config-content -->
+            </div>
         </div>
-    </div>
+
+        <!-- 3. STUDIO DRAWER -->
+        <div class="drawer-item drawer-hidden" id="drawer-studio">
+            <div class="drawer-tab" onclick="toggleDrawer('drawer-studio')">
+                <span class="tab-label">STUDIO</span>
+                <span class="tab-arrow">◀</span>
+            </div>
+            <div class="drawer-content" style="padding:10px;">
+                <h4 style="margin:0 0 10px 0; color:#f00;">🔴 ESTUDIO</h4>
+                <div id="studio-controls">
+                    <select id="rec-resolution"
+                        style="width:100%; background:#111; color:#0f0; border:1px solid #333; margin-bottom:5px;">
+                        <option value="original">Original</option>
+                        <option value="tiktok">TikTok 9:16</option>
+                        <option value="landscape">HD 16:9</option>
+                        <option value="square">1:1</option>
+                    </select>
+                    <div class="config-row"><input type="checkbox" id="rec-audio" checked> <span>Audio Sys</span></div>
+
+                    <button class="ctrl-btn" id="btn-rec-track"
+                        style="width:100%; margin-top:5px; color:#fa0; border-color:#fa0;">GRABAR TRACK</button>
+                    <button class="ctrl-btn" id="btn-rec-playlist"
+                        style="width:100%; margin-top:5px; color:#f5f; border-color:#f5f;">GRABAR PLAYLIST</button>
+                    <button class="ctrl-btn rec-btn" id="recordBtnManual" style="width:100%; margin-top:5px;">REC
+                        MANUAL</button>
+                    <div id="rec-status" style="display:none; color:red; text-align:center;">GRABANDO...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. TEXT DRAWER -->
+        <div class="drawer-item drawer-hidden" id="drawer-text">
+            <div class="drawer-tab" onclick="toggleDrawer('drawer-text')">
+                <span class="tab-label">TEXTO</span>
+                <span class="tab-arrow">◀</span>
+            </div>
+            <div class="drawer-content" style="padding:10px;">
+                <h4 style="margin:0 0 5px 0;">🅰 TEXTO</h4>
+                <div id="text-mode-panel">
+                    <div id="text-content">
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="matrixText" value="PatSaint" placeholder="Texto..."
+                                style="width:70%; background:#111; color:#0f0; border:1px solid #333;">
+                            <button id="updateTextBtn" style="flex:1;">OK</button>
+                        </div>
+                        <button id="toggleTextModeBtn" style="width:100%; margin-top:5px;">ACTIVAR TEXTO</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. CONFIG DRAWER -->
+        <div class="drawer-item drawer-hidden" id="drawer-config">
+            <div class="drawer-tab" onclick="toggleDrawer('drawer-config')">
+                <span class="tab-label">CONFIG</span>
+                <span class="tab-arrow">◀</span>
+            </div>
+            <div class="drawer-content" style="padding:10px;">
+                <h4 style="margin:0 0 10px 0;">⚙ CONFIG</h4>
+                <div id="config-content"> <!-- ID ORIGINAL PRESERVADO -->
+                    <!-- NOTA: He mantenido los inputs originales pero compactados -->
+
+                    <!-- VISUALES -->
+                    <div class="config-group">
+                        <label>Z-Depth / Audio-Z</label>
+                        <div class="config-row">
+                            <input type="range" id="cfg-baseDepth" min="1" max="50" value="9">
+                            <input type="range" id="cfg-audioDepth" min="0" max="50" value="9">
+                        </div>
+                    </div>
+
+                    <!-- PUNTOS -->
+                    <div class="config-group">
+                        <label>Tamaño / Brillo</label>
+                        <div class="config-row">
+                            <input type="range" id="cfg-pointSize" min="0.1" max="2.0" step="0.05" value="0.45">
+                            <input type="range" id="cfg-gain" min="0.5" max="5.0" step="0.1" value="1.5">
+                        </div>
+                    </div>
+
+                    <!-- EFECTOS -->
+                    <div class="config-group">
+                        <label>Olas / Lluvia</label>
+                        <div class="config-row" style="margin-bottom:5px;">
+                            <input type="radio" name="effectMode" value="wave" checked> O
+                            <input type="radio" name="effectMode" value="ripple"> Ll
+                        </div>
+                        <div id="panel-wave"><input type="range" id="cfg-waveInt" min="0" max="10" step="0.1"
+                                value="1.5"></div>
+                        <div id="panel-ripple" style="display:none;"><input type="range" id="cfg-rippleInt" value="3.0">
+                        </div>
+                    </div>
+
+                    <div class="config-group">
+                        <label>Geometría</label>
+                        <select id="cfg-viewMode"
+                            style="width:100%; background:#222; color:#0f0; border:1px solid #444;">
+                            <option value="plane">Plano</option>
+                            <option value="cylinder">Cilindro</option>
+                            <option value="sphere">Esfera</option>
+                            <option value="spiral">Espiral</option>
+                            <option value="vortex">Vórtice</option>
+                            <option value="torus">Toroide</option>
+                            <option value="kaleido">Caleido</option>
+                        </select>
+                    </div>
+
+                    <!-- SISTEMA -->
+                    <div class="config-group">
+                        <div class="config-row"><input type="checkbox" id="cfg-autoMood" checked> <span>Auto
+                                Color</span></div>
+                        <div class="config-row"><input type="checkbox" id="cfg-autoRotate" checked> <span>Auto
+                                Rotar</span></div>
+                        <div class="config-row"><input type="range" id="cfg-rotateSpeed" value="2.0"></div>
+                        <div class="config-row"><input type="range" id="cfg-exaggeration" value="2.0"></div>
+                    </div>
+
+                    <!-- HIDDEN BUT REQUIRED -->
+                    <div style="display:none;">
+                        <input type="checkbox" id="cfg-trailData">
+                    </div>
+
+                    <button class="ctrl-btn" id="randomHueBtn" style="margin-top:10px; width:100%;">COLOR RAND</button>
+                    <button class="ctrl-btn" id="resetDefaultsBtn"
+                        style="margin-top:5px; width:100%; color:red; border-color:red;">RESET</button>
+
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- FIN CONTENEDOR PRINCIPAL -->
 
     <button id="resetBtn"
         style="display:none; position:fixed; top:20px; right:320px; z-index:100; padding:10px 20px; font-size:14px; background:rgba(0,30,0,0.8); color:#0f0; border:1px solid #0f0; cursor:pointer; border-radius:5px; font-family:monospace; font-weight:bold;">REINICIAR
@@ -1946,6 +1789,40 @@
                     startVisualizer();
                 }
             });
+        }
+
+        // --- FUNCIÓN ÚNICA PARA LOS CAJONES (MODO ACORDEÓN) ---
+        function toggleDrawer(drawerId) {
+            const allDrawers = document.querySelectorAll('.drawer-item');
+            const targetDrawer = document.getElementById(drawerId);
+
+            if (!targetDrawer) return;
+
+            // 1. Si el target NO está oculto (está abierto), simplemente lo cerramos.
+            const isCurrentlyOpen = !targetDrawer.classList.contains('drawer-hidden');
+
+            if (isCurrentlyOpen) {
+                targetDrawer.classList.add('drawer-hidden');
+                updateDrawerArrow(targetDrawer, true); // true = hidden (flecha izq)
+            } else {
+                // 2. Si queremos ABRIR uno...
+                // Primero cerramos TODOS los demás
+                allDrawers.forEach(d => {
+                    d.classList.add('drawer-hidden');
+                    updateDrawerArrow(d, true);
+                });
+
+                // Y abrimos el nuestro
+                targetDrawer.classList.remove('drawer-hidden');
+                updateDrawerArrow(targetDrawer, false); // false = not hidden (flecha der)
+            }
+        }
+
+        function updateDrawerArrow(drawerElement, isHidden) {
+            const arrowSpan = drawerElement.querySelector('.tab-arrow');
+            if (arrowSpan) {
+                arrowSpan.innerHTML = isHidden ? '◀' : '▶';
+            }
         }
     </script>
 
