@@ -171,10 +171,16 @@
 
         /* Ajustes específicos para Playlist (que necesita scroll interno) */
         #drawer-playlist .drawer-content {
-            max-height: 40vh;
-            overflow-y: auto;
+            /* Fix height */
+            height: 100%;
+            max-height: 80vh;
+            /* Max height del drawer */
+            /* Flex layout */
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            /* Prevent global scroll */
+            padding: 0;
         }
 
         #playlist-header {
@@ -194,6 +200,14 @@
             padding: 0;
             margin: 0;
             width: 100%;
+            /* FLEX GROW to take available space */
+            flex-grow: 1;
+            overflow-y: auto;
+            /* Scroll ONLY here */
+            min-height: 0;
+            /* Flexbox scrolling fix */
+            border: 1px solid #222;
+            margin-bottom: 5px;
         }
 
         #track-list li {
@@ -262,11 +276,11 @@
     <!-- CONTENEDOR PRINCIPAL DE CAJONES -->
     <div id="main-sidebar-container">
 
-        <!-- 1. PLAYLIST DRAWER -->
-        <div class="drawer-item drawer-hidden" id="drawer-playlist">
+        <!-- 1. PLAYLIST DRAWER (Auto-Open: Removed drawer-hidden) -->
+        <div class="drawer-item" id="drawer-playlist">
             <div class="drawer-tab" onclick="toggleDrawer('drawer-playlist')">
                 <span class="tab-label">LISTA</span>
-                <span class="tab-arrow">◀</span>
+                <span class="tab-arrow">▶</span>
             </div>
             <div class="drawer-content">
                 <div id="playlist-header">
