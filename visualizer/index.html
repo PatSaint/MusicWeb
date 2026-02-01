@@ -188,8 +188,41 @@
         }
 
         /* Reutilizamos estilos previos */
+        #track-list {
+            list-style: none;
+            /* Remove bullets */
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
         #track-list li {
             border-bottom: 1px solid #222;
+            padding: 8px 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            /* No envolver texto */
+            overflow: hidden;
+            /* Ocultar sobrante */
+            text-overflow: ellipsis;
+            /* Puntos suspensivos... */
+            color: #aaa;
+            font-size: 11px;
+            transition: background 0.2s;
+        }
+
+        #track-list li:hover {
+            background: rgba(0, 255, 0, 0.1);
+            color: #fff;
+        }
+
+        #track-list li.active {
+            color: #0f0;
+            /* Texto verde */
+            background: rgba(0, 50, 0, 0.8);
+            /* Fondo oscuro verdoso */
+            font-weight: bold;
+            border-left: 3px solid #0f0;
         }
 
         /* Ajuste config panel altura */
@@ -1034,6 +1067,19 @@
             if (audioContext && audioContext.state === 'suspended') {
                 audioContext.resume();
             }
+
+            // LÓGICA INTELIGENTE: Si no hay canción cargada o seleccionada, seleccionar una.
+            // audio.src suele ser "" al inicio o si no se ha elegido nada.
+            if (!audio.src || audio.src === window.location.href) {
+                // Si estamos en suffle, random. Si no, la primera.
+                if (shuffleActive) {
+                    playTrack(Math.floor(Math.random() * playlist.length));
+                } else {
+                    playTrack(0);
+                }
+                return; // playTrack ya inicia la reproducción
+            }
+
             if (audio.paused) {
                 audio.play();
                 playPauseBtn.textContent = "⏸";
